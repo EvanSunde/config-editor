@@ -4,6 +4,18 @@ import { HexColorPicker } from "react-colorful";
 // --- STYLES ---
 const CONTAINER_STYLE = { padding: '20px', background: '#1a1a1a', height: '100%', overflowY: 'auto', color: '#e0e0e0' };
 const INPUT_STYLE = { padding: '8px', margin: '5px 0', background: '#252525', color: '#fff', border: '1px solid #444', borderRadius: '4px', width: '100%', boxSizing: 'border-box' };
+const SELECT_STYLE = {
+    ...INPUT_STYLE,
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    paddingRight: '28px',
+    backgroundImage: 'linear-gradient(45deg, transparent 50%, #ff0e82 50%), linear-gradient(135deg, #ff0e82 50%, transparent 50%)',
+    backgroundPosition: 'calc(100% - 20px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px)',
+    backgroundSize: '8px 8px, 8px 8px',
+    backgroundRepeat: 'no-repeat'
+};
+const OPTION_STYLE = { background: '#121212', color: '#f5f5f5' };
 const LABEL_STYLE = { display: 'block', margin: '15px 0', fontSize: '12px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.5px' };
 const HEADER_STYLE = { borderBottom: '1px solid #ff0e82', paddingBottom: '15px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
 const BTN_DANGER = { background: '#8b0000', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px' };
@@ -54,15 +66,15 @@ export default function PresetEditor({ preset, onChange }) {
 
             {/* --- COMMON: TYPE SELECTOR --- */}
             <label style={LABEL_STYLE}>Effect Type
-                <select style={INPUT_STYLE} value={preset.type} onChange={e => handleChange('type', e.target.value)}>
-                    <option value="static_color">Static Color</option>
-                    <option value="liquid_plasma">Liquid Plasma</option>
-                    <option value="reaction_diffusion">Reaction Diffusion</option>
-                    <option value="star_matrix">Star Matrix</option>
-                    <option value="smoke">Smoke</option>
-                    <option value="rainbow_wave">Rainbow Wave</option>
-                    <option value="doom_fire">Doom Fire</option>
-                    <option value="reactive_ripple">Reactive Ripple</option>
+                <select style={SELECT_STYLE} value={preset.type} onChange={e => handleChange('type', e.target.value)}>
+                    <option value="static_color" style={OPTION_STYLE}>Static Color</option>
+                    <option value="liquid_plasma" style={OPTION_STYLE}>Liquid Plasma</option>
+                    <option value="reaction_diffusion" style={OPTION_STYLE}>Reaction Diffusion</option>
+                    <option value="star_matrix" style={OPTION_STYLE}>Star Matrix</option>
+                    <option value="smoke" style={OPTION_STYLE}>Smoke</option>
+                    <option value="rainbow_wave" style={OPTION_STYLE}>Rainbow Wave</option>
+                    <option value="doom_fire" style={OPTION_STYLE}>Doom Fire</option>
+                    <option value="reactive_ripple" style={OPTION_STYLE}>Reactive Ripple</option>
                 </select>
             </label>
 

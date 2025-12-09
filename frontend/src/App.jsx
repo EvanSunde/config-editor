@@ -8,6 +8,17 @@ const NAV_BTN = { padding: '10px 20px', background: 'transparent', color: '#888'
 const NAV_ACTIVE = { ...NAV_BTN, color: '#ff0e82', borderBottom: '2px solid #ff0e82' };
 const SIDEBAR_ITEM = { padding: '8px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontSize: '14px' };
 const TABLE_CELL = { padding: '10px', borderBottom: '1px solid #333' };
+const SELECT_STYLE = {
+    background: '#161616',
+    color: '#f5f5f5',
+    border: '1px solid #333',
+    borderRadius: 4,
+    padding: '6px 10px',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none'
+};
+const OPTION_STYLE = { background: '#151515', color: '#f5f5f5' };
 
 function App() {
     const [config, setConfig] = useState(null);
@@ -194,9 +205,11 @@ function App() {
                                             <select 
                                                 value={layer.preset}
                                                 onChange={(e) => updateLayer(idx, 'preset', e.target.value)}
-                                                style={{flex:1, background:'#333', color:'white', border:'1px solid #444', padding: 5}}
+                                                style={{ ...SELECT_STYLE, flex: 1 }}
                                             >
-                                                {Object.keys(config.presets).map(p => <option key={p} value={p}>{p}</option>)}
+                                                {Object.keys(config.presets).map(p => (
+                                                    <option key={p} value={p} style={OPTION_STYLE}>{p}</option>
+                                                ))}
                                             </select>
                                             <button style={{color:'red', background:'transparent', border:'none'}} 
                                                 onClick={() => {
@@ -244,9 +257,11 @@ function App() {
                                                                 else newApps[app] = e.target.value;
                                                                 setConfig({...config, apps: {...config.apps, mappings: newApps}});
                                                             }}
-                                                            style={{background:'#333', color:'white', border:'none', padding: 5}}
+                                                            style={SELECT_STYLE}
                                                         >
-                                                            {Object.keys(config.profiles).map(p => <option key={p} value={p}>{p}</option>)}
+                                                            {Object.keys(config.profiles).map(p => (
+                                                                <option key={p} value={p} style={OPTION_STYLE}>{p}</option>
+                                                            ))}
                                                         </select>
                                                     </td>
                                                     <td style={TABLE_CELL}>
