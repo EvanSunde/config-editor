@@ -4,4 +4,6 @@ import {main} from '../models';
 
 export function LoadConfig():Promise<main.Config>;
 
+export function LoadLayout(arg1:string):Promise<Array<main.KeyLayout>>;
+
 export function SaveConfig(arg1:main.Config):Promise<void>;

@@ -8,14 +8,26 @@ const ACTIVE_NAV = { ...NAV_STYLE, color: '#ff0e82', borderBottom: '2px solid #f
 
 function App() {
     const [config, setConfig] = useState(null);
+    const [layout, setLayout] = useState([]); // Store the keyboard layout here
     const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'profiles'
     const [selectedItem, setSelectedItem] = useState(null); // Key of the preset or profile being edited
     const [status, setStatus] = useState("Connecting to Engine...");
 
-    useEffect(() => {
-        LoadConfig().then(data => {
+useEffect(() => {
+        LoadConfig().then(async (data) => {
             setConfig(data);
             setStatus("Config Loaded");
+
+            // Once config is loaded, fetch the specific layout file defined in config.toml
+            if (data.device && data.device.layout) {
+                try {
+                    const loadedLayout = await LoadLayout(data.device.layout);
+                    setLayout(loadedLayout);
+                } catch (e) {
+                    console.error("Failed to load layout CSV:", e);
+                    setStatus("Error loading layout");
+                }
+            }
         });
     }, []);
 
@@ -89,6 +101,7 @@ function App() {
                             <div style={{padding: 20}}>
                                 <h2 style={{color: '#ff0e82'}}>Editing Profile: {selectedItem}</h2>
                                 <KeyboardVisualizer 
+                                    layout={layout}  
                                     activeZones={[]} 
                                     activeKeys={[]} // You can map layers to keys here later
                                     onKeyClick={(k) => console.log("Key clicked:", k)}
