@@ -164,6 +164,7 @@ function App() {
                                 <KeyboardVisualizer 
                                     layout={layout}
                                     keyColors={getVisualizerColors()} // <--- THE MAGIC HAPPENS HERE
+                                    preset={activeTab === 'presets' ? config.presets[selectedItem] : null}
                                     onKeyClick={(k) => console.log(k)}
                                 />
                             </div>
