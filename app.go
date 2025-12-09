@@ -27,23 +27,42 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// getConfigPath helper to find the file
-func (a *App) getConfigPath() string {
-	home, _ := os.UserHomeDir()
-	// Adjust this path to match your Linux system
-	return filepath.Join(home, ".config", "Redragon", "config.toml")
+// Helper: Get the base config directory (~/.config/Redragon)
+func (a *App) getConfigDir() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".config", "Redragon"), nil
+}
+
+// KeyLayout matches the CSV structure for the frontend
+type KeyLayout struct {
+	Label string  `json:"label"`
+	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
+	W     float64 `json:"w"`
+	H     float64 `json:"h"`
 }
 
 // LoadConfig reads the TOML file and returns the struct to the Frontend
 func (a *App) LoadConfig() (Config, error) {
 	var config Config
-	path := a.getConfigPath()
 
-	data, err := os.ReadFile(path)
+	dir, err := a.getConfigDir()
 	if err != nil {
-		return config, fmt.Errorf("could not read file: %w", err)
+		return config, fmt.Errorf("could not get config dir: %w", err)
 	}
 
+	path := filepath.Join(dir, "config.toml")
+
+	// Read file content
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return config, fmt.Errorf("could not read file at %s: %w", path, err)
+	}
+
+	// Parse TOML
 	if _, err := toml.Decode(string(data), &config); err != nil {
 		return config, fmt.Errorf("could not parse TOML: %w", err)
 	}
@@ -53,7 +72,12 @@ func (a *App) LoadConfig() (Config, error) {
 
 // SaveConfig takes the updated struct from Frontend and writes it back to disk
 func (a *App) SaveConfig(config Config) error {
-	path := a.getConfigPath()
+	dir, err := a.getConfigDir()
+	if err != nil {
+		return fmt.Errorf("could not get config dir: %w", err)
+	}
+
+	path := filepath.Join(dir, "config.toml")
 
 	f, err := os.Create(path)
 	if err != nil {
@@ -62,6 +86,7 @@ func (a *App) SaveConfig(config Config) error {
 	defer f.Close()
 
 	encoder := toml.NewEncoder(f)
+	// Optionally indent if your library supports it, otherwise default encoding
 	if err := encoder.Encode(config); err != nil {
 		return fmt.Errorf("could not encode TOML: %w", err)
 	}
@@ -69,59 +94,81 @@ func (a *App) SaveConfig(config Config) error {
 	return nil
 }
 
-// Add this struct to app.go
-type KeyLayout struct {
-	Label string  `json:"label"`
-	X     float64 `json:"x"`
-	Y     float64 `json:"y"`
-	W     float64 `json:"w"`
-	H     float64 `json:"h"` // Optional, default to 1 if missing
-}
-
-// Add this method to the App struct
+// LoadLayout reads the CSV layout file specified in the config
 func (a *App) LoadLayout(csvFilename string) ([]KeyLayout, error) {
-	// Construct full path relative to the config folder
-	home, _ := os.UserHomeDir()
-	path := filepath.Join(home, ".config", "Redragon", csvFilename)
+	dir, err := a.getConfigDir()
+	if err != nil {
+		return nil, err
+	}
 
+	path := filepath.Join(dir, csvFilename)
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("could not open layout file: %w", err)
+		return nil, fmt.Errorf("layout file not found: %w", err)
 	}
 	defer f.Close()
 
 	var keys []KeyLayout
-
-	// standard CSV reader
 	reader := csv.NewReader(f)
+	reader.FieldsPerRecord = -1
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, fmt.Errorf("could not parse CSV: %w", err)
+		return nil, fmt.Errorf("CSV parse error: %w", err)
 	}
 
-	// Assuming CSV format: Label, X, Y, Width
-	// Skip header if necessary, or check first row
-	for i, row := range records {
-		// Simple heuristic to skip header
-		if i == 0 && row[0] == "Label" {
-			continue
+	// Check if Matrix (starts with Esc/F1) or Coordinate (starts with Label)
+	isMatrix := len(records) > 0 && records[0][0] != "Label"
+
+	if isMatrix {
+		fmt.Println("DEBUG: Detected Vertical Matrix. Transposing...")
+		for colIndex, row := range records { // CSV Rows are physical Columns (X)
+			for rowIndex, label := range row { // CSV Items are physical Rows (Y)
+
+				// Safe check for NAN or empty strings
+				if label == "NAN" || label == "" || label == "nan" {
+					continue
+				}
+
+				// SWAP LOGIC:
+				// X = colIndex (The row in CSV)
+				// Y = rowIndex (The position in that row)
+				keys = append(keys, KeyLayout{
+					Label: label,
+					X:     float64(colIndex),
+					Y:     float64(rowIndex),
+					W:     1,
+					H:     1,
+				})
+			}
 		}
-
-		if len(row) < 4 {
-			continue
+	} else {
+		// Standard Coordinate Mode (Label, X, Y, W)
+		for i, row := range records {
+			if i == 0 || len(row) < 4 {
+				continue
+			}
+			// Helper function safeParseFloat (ensure you have this from previous step)
+			keys = append(keys, KeyLayout{
+				Label: row[0],
+				X:     safeParseFloat(row[1]),
+				Y:     safeParseFloat(row[2]),
+				W:     safeParseFloat(row[3]),
+				H:     1,
+			})
 		}
-
-		x, _ := strconv.ParseFloat(row[1], 64)
-		y, _ := strconv.ParseFloat(row[2], 64)
-		w, _ := strconv.ParseFloat(row[3], 64)
-
-		keys = append(keys, KeyLayout{
-			Label: row[0],
-			X:     x,
-			Y:     y,
-			W:     w,
-		})
 	}
 
 	return keys, nil
+}
+
+// Make sure you have this helper at the bottom of app.go
+func safeParseFloat(s string) float64 {
+	if s == "NAN" || s == "nan" || s == "" {
+		return 0
+	}
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
+	return val
 }

@@ -1,32 +1,35 @@
-import { useState, useEffect } from 'react';
-import { LoadConfig, SaveConfig } from "../wailsjs/go/main/App";
+import { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import { LoadConfig, SaveConfig, LoadLayout } from "../wailsjs/go/main/App";
 import PresetEditor from './components/PresetEditor';
 import KeyboardVisualizer from './components/KeyboardVisualizer';
 
-const NAV_STYLE = { padding: '15px', background: '#111', color: '#888', cursor: 'pointer', borderBottom: '2px solid transparent' };
-const ACTIVE_NAV = { ...NAV_STYLE, color: '#ff0e82', borderBottom: '2px solid #ff0e82' };
+// Helper Styles
+const NAV_BTN = { padding: '10px 20px', background: 'transparent', color: '#888', border: 'none', cursor: 'pointer', fontSize: '16px', borderBottom: '2px solid transparent' };
+const NAV_ACTIVE = { ...NAV_BTN, color: '#ff0e82', borderBottom: '2px solid #ff0e82' };
+const SIDEBAR_ITEM = { padding: '8px 15px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontSize: '14px' };
 
 function App() {
     const [config, setConfig] = useState(null);
-    const [layout, setLayout] = useState([]); // Store the keyboard layout here
-    const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'profiles'
-    const [selectedItem, setSelectedItem] = useState(null); // Key of the preset or profile being edited
-    const [status, setStatus] = useState("Connecting to Engine...");
+    const [layout, setLayout] = useState([]);
+    const [activeTab, setActiveTab] = useState('presets'); 
+    const [selectedItem, setSelectedItem] = useState(null); 
+    const [status, setStatus] = useState("Loading...");
 
-useEffect(() => {
+    // --- BUG FIX: Reset selection when tab changes ---
+    useEffect(() => {
+        setSelectedItem(null);
+    }, [activeTab]);
+    // ------------------------------------------------
+
+    useEffect(() => {
         LoadConfig().then(async (data) => {
             setConfig(data);
             setStatus("Config Loaded");
-
-            // Once config is loaded, fetch the specific layout file defined in config.toml
-            if (data.device && data.device.layout) {
+            if (data.device?.layout) {
                 try {
-                    const loadedLayout = await LoadLayout(data.device.layout);
-                    setLayout(loadedLayout);
-                } catch (e) {
-                    console.error("Failed to load layout CSV:", e);
-                    setStatus("Error loading layout");
-                }
+                    const l = await LoadLayout(data.device.layout);
+                    setLayout(l);
+                } catch(e) { console.error(e); }
             }
         });
     }, []);
@@ -34,92 +37,133 @@ useEffect(() => {
     const handleSave = async () => {
         setStatus("Saving...");
         await SaveConfig(config);
-        setStatus("Saved to Disk!");
+        setStatus("Saved!");
         setTimeout(() => setStatus("Ready"), 2000);
     };
 
-    // Helper to update global config state
-    const updatePreset = (name, newPresetData) => {
-        setConfig(prev => ({
-            ...prev,
-            presets: { ...prev.presets, [name]: newPresetData }
-        }));
+    const updatePreset = (name, data) => {
+        const newPresets = { ...config.presets };
+        if (data === null) {
+            delete newPresets[name];
+            setSelectedItem(null); // Deselect if deleted
+        } else {
+            newPresets[name] = data;
+        }
+        setConfig({ ...config, presets: newPresets });
     };
 
-    if (!config) return <div style={{color: '#fff', padding: 50}}>{status}</div>;
+    const createItem = () => {
+        const name = prompt("Enter name:");
+        if (!name) return;
+        if (activeTab === 'presets') {
+            setConfig(prev => ({ ...prev, presets: { ...prev.presets, [name]: { type: "static_color", color: "#ffffff" } } }));
+        } else if (activeTab === 'profiles') {
+            setConfig(prev => ({ ...prev, profiles: { ...prev.profiles, [name]: { layers: [] } } }));
+        }
+        setSelectedItem(name);
+    };
+
+    // --- HELPER: Calculate Preview Color for Visualizer ---
+    // This logic decides what color to show on the keyboard based on the preset type
+    const getPreviewColor = (presetName) => {
+        if (!config || !config.presets[presetName]) return null;
+        const p = config.presets[presetName];
+
+        if (p.type === 'static_color') return p.color;
+        if (p.type === 'reaction_diffusion') return p.color_b; // Show the "Growth" color
+        if (p.type === 'star_matrix') return p.star;           // Show the Star color
+        if (p.type === 'liquid_plasma' || p.type === 'smoke') {
+            // Return the first color, or a default if empty
+            return (p.colors && p.colors.length > 0) ? p.colors[0] : '#333';
+        }
+        return '#444'; // Default grey
+    };
+    // ----------------------------------------------------
+
+    if (!config) return <div style={{padding: 50, color: 'white'}}>{status}</div>;
 
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#050505', color: 'white', fontFamily: 'monospace' }}>
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#050505', color: '#e0e0e0', fontFamily: 'Segoe UI, sans-serif' }}>
             
-            {/* TOP BAR */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #333', justifyContent: 'space-between', alignItems: 'center', paddingRight: 20 }}>
-                <div style={{display: 'flex'}}>
-                    <div style={activeTab === 'presets' ? ACTIVE_NAV : NAV_STYLE} onClick={() => {setActiveTab('presets'); setSelectedItem(null);}}>Presets</div>
-                    <div style={activeTab === 'profiles' ? ACTIVE_NAV : NAV_STYLE} onClick={() => {setActiveTab('profiles'); setSelectedItem(null);}}>Profiles</div>
-                </div>
-                <div style={{color: status.includes("Saved") ? '#0f0' : '#666'}}>{status}</div>
-                <button onClick={handleSave} style={{ background: '#ff0e82', border: 'none', color: '#fff', padding: '8px 20px', cursor: 'pointer', fontWeight: 'bold' }}>SAVE</button>
+            {/* HEADER */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #333', alignItems: 'center', padding: '0 10px', height: '50px' }}>
+                <button style={activeTab === 'presets' ? NAV_ACTIVE : NAV_BTN} onClick={() => setActiveTab('presets')}>Presets</button>
+                <button style={activeTab === 'profiles' ? NAV_ACTIVE : NAV_BTN} onClick={() => setActiveTab('profiles')}>Profiles</button>
+                <button style={activeTab === 'apps' ? NAV_ACTIVE : NAV_BTN} onClick={() => setActiveTab('apps')}>Apps</button>
+                <div style={{flex:1}} />
+                <button onClick={handleSave} style={{ background: '#ff0e82', color: '#fff', border: 'none', padding: '6px 20px', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}>SAVE DISK</button>
             </div>
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 
-                {/* SIDEBAR LIST */}
-                <div style={{ width: '250px', borderRight: '1px solid #333', overflowY: 'auto' }}>
-                    {activeTab === 'presets' && Object.keys(config.presets).map(name => (
-                        <div 
-                            key={name}
-                            onClick={() => setSelectedItem(name)}
-                            style={{ padding: '10px 20px', cursor: 'pointer', background: selectedItem === name ? '#222' : 'transparent', color: selectedItem === name ? '#ff0e82' : '#ccc' }}
-                        >
-                            {name}
+                {/* SIDEBAR */}
+                {activeTab !== 'apps' && (
+                    <div style={{ width: '220px', borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
+                        <button onClick={createItem} style={{ background: '#111', color: '#ff0e82', border: 'none', padding: 12, cursor: 'pointer', borderBottom: '1px solid #333', fontWeight: 'bold' }}>+ NEW {activeTab.slice(0, -1).toUpperCase()}</button>
+                        <div style={{ overflowY: 'auto', flex: 1 }}>
+                            {Object.keys(config[activeTab]).sort().map(name => (
+                                <div key={name} onClick={() => setSelectedItem(name)}
+                                    style={{ ...SIDEBAR_ITEM, background: selectedItem === name ? '#222' : 'transparent', color: selectedItem === name ? '#ff0e82' : '#888', borderLeft: selectedItem === name ? '3px solid #ff0e82' : '3px solid transparent' }}>
+                                    {name}
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                    {activeTab === 'profiles' && Object.keys(config.profiles).map(name => (
-                        <div 
-                            key={name}
-                            onClick={() => setSelectedItem(name)}
-                            style={{ padding: '10px 20px', cursor: 'pointer', background: selectedItem === name ? '#222' : 'transparent', color: selectedItem === name ? '#ff0e82' : '#ccc' }}
-                        >
-                            {name}
-                        </div>
-                    ))}
-                </div>
+                    </div>
+                )}
 
-                {/* MAIN CONTENT AREA */}
-                <div style={{ flex: 1, display: 'flex' }}>
+                {/* MAIN CONTENT - SPLIT VIEW FOR BOTH TABS */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     
-                    {/* EDITOR PANEL */}
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {/* TOP: VISUALIZER (Shared for Presets & Profiles) */}
+                    {(activeTab === 'presets' || activeTab === 'profiles') && selectedItem && (
+                        <div style={{ height: '40%', background: '#000', borderBottom: '1px solid #333', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{transform: 'scale(0.7)'}}>
+                                <KeyboardVisualizer 
+                                    layout={layout}
+                                    // If in PRESETS tab, force the whole keyboard to the preview color
+                                    forcedColor={activeTab === 'presets' ? getPreviewColor(selectedItem) : null}
+                                    
+                                    // If in PROFILES tab, (Future: highlight specific zones)
+                                    activeKeys={[]} 
+                                    activeZones={[]} 
+                                    onKeyClick={() => {}}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* BOTTOM: EDITORS */}
+                    <div style={{ flex: 1, overflowY: 'auto', background: '#111' }}>
+                        
+                        {/* 1. PRESET EDITOR FORM */}
                         {activeTab === 'presets' && selectedItem && (
                             <PresetEditor 
                                 preset={config.presets[selectedItem]} 
-                                onChange={(updated) => updatePreset(selectedItem, updated)} 
+                                onChange={(d) => updatePreset(selectedItem, d)} 
                             />
                         )}
 
+                        {/* 2. PROFILE EDITOR FORM */}
                         {activeTab === 'profiles' && selectedItem && (
                             <div style={{padding: 20}}>
-                                <h2 style={{color: '#ff0e82'}}>Editing Profile: {selectedItem}</h2>
-                                <KeyboardVisualizer 
-                                    layout={layout}  
-                                    activeZones={[]} 
-                                    activeKeys={[]} // You can map layers to keys here later
-                                    onKeyClick={(k) => console.log("Key clicked:", k)}
-                                />
-                                
-                                <h3 style={{marginTop: 30}}>Layers</h3>
-                                {(config.profiles[selectedItem].layers || []).map((layer, idx) => (
-                                    <div key={idx} style={{ background: '#222', padding: 10, marginBottom: 5, display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Layer {idx + 1}: <strong style={{color: '#ffcb0e'}}>{layer.preset}</strong></span>
-                                        <div>
-                                            <span style={{fontSize: 12, color: '#888', marginRight: 10}}>
-                                                {layer.zones ? `Zones: ${layer.zones.join(', ')}` : ''} 
-                                                {layer.keys ? ` Keys: ${layer.keys.length}` : ''}
-                                            </span>
-                                        </div>
+                                <h2 style={{marginTop:0}}>Layers for {selectedItem}</h2>
+                                {/* ... (Your existing Profile Layer logic here) ... */}
+                                {(config.profiles[selectedItem]?.layers || []).map((layer, i) => (
+                                    <div key={i} style={{background: '#222', padding: 10, marginBottom: 5, borderRadius: 4, display:'flex', justifyContent:'space-between'}}>
+                                        <span>{layer.preset}</span>
                                     </div>
                                 ))}
                             </div>
+                        )}
+
+                        {/* EMPTY STATE */}
+                        {!selectedItem && activeTab !== 'apps' && (
+                            <div style={{padding: 50, color: '#444', textAlign: 'center'}}>Select an item from the sidebar to edit</div>
+                        )}
+                        
+                        {/* APP BINDINGS (As before) */}
+                        {activeTab === 'apps' && (
+                           <div style={{padding: 20}}>App Bindings Table...</div>
                         )}
                     </div>
                 </div>
