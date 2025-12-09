@@ -167,6 +167,38 @@ export default function PresetEditor({ preset, onChange }) {
                     </div>
                 </>
             )}
+            {/* --- REACTIVE RIPPLE --- */}
+{preset.type === 'reactive_ripple' && (
+    <>
+        <div style={{ background: '#222', padding: 15, borderRadius: 8, marginBottom: 15 }}>
+            <div style={{display: 'flex', gap: 20}}>
+                <div>
+                    <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>RIPPLE COLOR</span>
+                    <ColorSwatch color={preset.color || '#00FF00'} onChange={c => handleChange('color', c)} />
+                </div>
+                <div>
+                    <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>BACKGROUND</span>
+                    <ColorSwatch color={preset.base_color || '#000000'} onChange={c => handleChange('base_color', c)} />
+                </div>
+            </div>
+        </div>
+
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+            <label style={LABEL_STYLE}>Wave Speed ({preset.wave_speed})
+                <input type="range" min="0.1" max="10.0" step="0.1" value={preset.wave_speed || 2.5} onChange={e => handleChange('wave_speed', parseFloat(e.target.value))} style={{width: '100%'}}/>
+            </label>
+            <label style={LABEL_STYLE}>Decay Time ({preset.decay_time}s)
+                <input type="range" min="0.1" max="5.0" step="0.1" value={preset.decay_time || 1.5} onChange={e => handleChange('decay_time', parseFloat(e.target.value))} style={{width: '100%'}}/>
+            </label>
+            <label style={LABEL_STYLE}>Thickness ({preset.thickness})
+                <input type="range" min="0.1" max="5.0" step="0.1" value={preset.thickness || 0.2} onChange={e => handleChange('thickness', parseFloat(e.target.value))} style={{width: '100%'}}/>
+            </label>
+             <label style={LABEL_STYLE}>Intensity
+                <input type="number" step="0.1" value={preset.intensity || 1.0} onChange={e => handleChange('intensity', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+            </label>
+        </div>
+    </>
+)}
 
              {/* --- STAR MATRIX --- */}
              {preset.type === 'star_matrix' && (
