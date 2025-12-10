@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'; 
 import { LoadConfig, SaveConfig, LoadLayout } from "../wailsjs/go/main/App";
-import PresetEditor from './components/PresetEditor';
+import EffectEditor from './components/PresetEditor';
 import KeyboardVisualizer from './components/KeyboardVisualizer';
 
 // --- STYLES ---
@@ -21,13 +21,31 @@ const SELECT_STYLE = {
 const OPTION_STYLE = { background: '#151515', color: '#f5f5f5' };
 const ZONE_TAG = { padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', border: '1px solid #444', marginRight: 5, marginBottom: 5, display: 'inline-block' };
 const ZONE_ACTIVE = { ...ZONE_TAG, background: '#ff0e82', color: 'white', borderColor: '#ff0e82' };
+const createDefaultLayer = () => ({ type: 'static_color', color: '#ffffff' });
+
+const getLayerPreviewColor = (layer) => {
+    if (!layer) return '#555';
+    if (layer.type === 'static_color' && layer.color) return layer.color;
+    if (layer.type === 'reaction_diffusion') return layer.color_b || layer.color_a || '#77ffee';
+    if (layer.type === 'star_matrix') return layer.star || '#ffffff';
+    if (layer.type === 'reactive_ripple') return layer.color || '#00ffcc';
+    if (layer.type === 'liquid_plasma' || layer.type === 'smoke' || layer.type === 'rainbow_wave') {
+        if (Array.isArray(layer.colors) && layer.colors.length > 0) return layer.colors[0];
+        if (layer.tint) return layer.tint;
+    }
+    if (layer.base_color) return layer.base_color;
+    if (layer.background) return layer.background;
+    if (Array.isArray(layer.colors) && layer.colors.length > 0) return layer.colors[0];
+    if (layer.color) return layer.color;
+    return '#555';
+};
 
 function App() {
     const [config, setConfig] = useState(null);
     const [layout, setLayout] = useState([]);
-    const [activeTab, setActiveTab] = useState('presets'); 
-    const [selectedItem, setSelectedItem] = useState(null); 
-    // NEW: Track which layer index is currently being "Painted"
+    const [activeTab, setActiveTab] = useState('profiles');
+    const [selectedProfile, setSelectedProfile] = useState(null);
+    const [selectedLayerIdx, setSelectedLayerIdx] = useState(null);
     const [editingLayerIdx, setEditingLayerIdx] = useState(null);
     const [status, setStatus] = useState("Loading...");
 
@@ -36,6 +54,15 @@ function App() {
         LoadConfig().then(async (data) => {
             setConfig(data);
             setStatus("Config Loaded");
+            // Auto-select default profile and first layer
+            const defaultProf = data?.apps?.default_profile;
+            const profiles = data?.profiles || {};
+            const initialProfile = defaultProf && profiles[defaultProf] ? defaultProf : Object.keys(profiles)[0];
+            if (initialProfile) {
+                setSelectedProfile(initialProfile);
+                const hasLayers = Array.isArray(profiles[initialProfile]?.layers) && profiles[initialProfile].layers.length > 0;
+                setSelectedLayerIdx(hasLayers ? 0 : null);
+            }
             if (data.device?.layout) {
                 try {
                     const l = await LoadLayout(data.device.layout);
@@ -45,10 +72,9 @@ function App() {
         });
     }, []);
 
-    // Reset editing layer when changing profiles
     useEffect(() => {
         setEditingLayerIdx(null);
-    }, [selectedItem, activeTab]);
+    }, [selectedProfile, activeTab]);
 
     // 2. SAVE
     const handleSave = async () => {
@@ -60,39 +86,18 @@ function App() {
 
     // 3. LOGIC: Calculate Colors for the Visualizer
     const getVisualizerColors = () => {
-        if (!config || !selectedItem) return {};
+        if (!config || !selectedProfile) return {};
         const colors = {}; 
 
-        // CASE A: PRESETS TAB 
-        if (activeTab === 'presets') {
-            const p = config.presets[selectedItem];
-            if (!p) return {};
-            let hex = '#444'; 
-            if (p.type === 'static_color') hex = p.color;
-            else if (p.type === 'reactive_ripple') hex = p.color;
-            else if (p.type === 'reaction_diffusion') hex = p.color_b;
-            else if (p.type === 'star_matrix') hex = p.star;
-            else if (p.colors && p.colors.length > 0) hex = p.colors[0];
-            layout.forEach(k => colors[k.label] = hex);
-        }
-
-        // CASE B: PROFILES TAB
-        else if (activeTab === 'profiles') {
-            const profile = config.profiles[selectedItem];
+        if (activeTab === 'profiles') {
+            const profile = config.profiles[selectedProfile];
             if (!profile || !profile.layers) return {};
 
             // SUB-CASE: EDITING A SPECIFIC LAYER (Mask Mode)
             // If we are editing a layer, dim everything else to show what this layer covers
             if (editingLayerIdx !== null && profile.layers[editingLayerIdx]) {
                 const targetLayer = profile.layers[editingLayerIdx];
-                const preset = config.presets[targetLayer.preset];
-                let activeColor = '#ff0e82'; // Default highlight
-                
-                // Try to use the preset's actual color for the highlight
-                if(preset) {
-                    if (preset.type === 'static_color') activeColor = preset.color;
-                    else if (preset.colors && preset.colors.length > 0) activeColor = preset.colors[0];
-                }
+                let activeColor = getLayerPreviewColor(targetLayer);
 
                 // 1. Dim Background
                 layout.forEach(k => colors[k.label] = '#111');
@@ -111,12 +116,7 @@ function App() {
             // SUB-CASE: NORMAL PREVIEW (Composite all layers)
             else {
                 profile.layers.forEach(layer => {
-                    const preset = config.presets[layer.preset];
-                    if (!preset) return;
-                    let layerColor = '#555';
-                    if (preset.type === 'static_color') layerColor = preset.color;
-                    else if (preset.colors && preset.colors.length > 0) layerColor = preset.colors[0];
-                    else if (preset.color_b) layerColor = preset.color_b;
+                    let layerColor = getLayerPreviewColor(layer);
 
                     if (layer.zones) layer.zones.forEach(z => (config.zones[z]||[]).forEach(k => colors[k] = layerColor));
                     if (layer.keys) layer.keys.forEach(k => colors[k] = layerColor);
@@ -133,43 +133,84 @@ function App() {
 
     // 4. HELPER: Toggle a Key in the Active Layer
     const handleKeyClick = (keyLabel) => {
-        if (activeTab === 'profiles' && editingLayerIdx !== null) {
-            const newProfiles = { ...config.profiles };
-            const layer = newProfiles[selectedItem].layers[editingLayerIdx];
-            
-            // Initialize keys array if missing
-            if (!layer.keys) layer.keys = [];
+        if (activeTab === 'profiles' && editingLayerIdx !== null && selectedProfile) {
+            setConfig(prev => {
+                const profiles = { ...prev.profiles };
+                const profile = { ...profiles[selectedProfile] };
+                const layers = [...(profile.layers || [])];
+                const layer = { ...layers[editingLayerIdx] };
 
-            if (layer.keys.includes(keyLabel)) {
-                // Remove key
-                layer.keys = layer.keys.filter(k => k !== keyLabel);
-            } else {
-                // Add key
-                layer.keys.push(keyLabel);
-            }
-            
-            setConfig({ ...config, profiles: newProfiles });
+                const keys = new Set(layer.keys || []);
+                if (keys.has(keyLabel)) keys.delete(keyLabel); else keys.add(keyLabel);
+                layer.keys = Array.from(keys);
+
+                layers[editingLayerIdx] = layer;
+                profile.layers = layers;
+                profiles[selectedProfile] = profile;
+                return { ...prev, profiles };
+            });
         }
     };
 
     // 5. HELPER: Toggle a Zone in the Active Layer
     const toggleZone = (layerIdx, zoneName) => {
-        const newProfiles = { ...config.profiles };
-        const layer = newProfiles[selectedItem].layers[layerIdx];
-        if (!layer.zones) layer.zones = [];
-
-        if (layer.zones.includes(zoneName)) {
-            layer.zones = layer.zones.filter(z => z !== zoneName);
-        } else {
-            layer.zones.push(zoneName);
-        }
-        setConfig({ ...config, profiles: newProfiles });
+        if (!selectedProfile) return;
+        setConfig(prev => {
+            const profiles = { ...prev.profiles };
+            const profile = { ...profiles[selectedProfile] };
+            const layers = [...(profile.layers || [])];
+            const layer = { ...layers[layerIdx] };
+            const zones = new Set(layer.zones || []);
+            if (zones.has(zoneName)) zones.delete(zoneName); else zones.add(zoneName);
+            layer.zones = Array.from(zones);
+            layers[layerIdx] = layer;
+            profile.layers = layers;
+            profiles[selectedProfile] = profile;
+            return { ...prev, profiles };
+        });
     };
 
-    const updateLayer = (layerIndex, field, value) => {
-        const newProfiles = { ...config.profiles };
-        newProfiles[selectedItem].layers[layerIndex][field] = value;
-        setConfig({ ...config, profiles: newProfiles });
+    const updateLayer = (layerIndex, nextLayer) => {
+        if (!selectedProfile) return;
+        setConfig(prev => {
+            const profiles = { ...prev.profiles };
+            const profile = { ...profiles[selectedProfile] };
+            const layers = [...(profile.layers || [])];
+            layers[layerIndex] = { ...nextLayer };
+            profile.layers = layers;
+            profiles[selectedProfile] = profile;
+            return { ...prev, profiles };
+        });
+    };
+
+    const addLayer = () => {
+        if (!selectedProfile) return;
+        setConfig(prev => {
+            const profiles = { ...prev.profiles };
+            const profile = { ...profiles[selectedProfile] };
+            const layers = [...(profile.layers || [])];
+            layers.push(createDefaultLayer());
+            profile.layers = layers;
+            profiles[selectedProfile] = profile;
+            setSelectedLayerIdx(layers.length - 1);
+            setEditingLayerIdx(layers.length - 1);
+            return { ...prev, profiles };
+        });
+    };
+
+    const removeLayer = (idx) => {
+        if (!selectedProfile) return;
+        setConfig(prev => {
+            const profiles = { ...prev.profiles };
+            const profile = { ...profiles[selectedProfile] };
+            const layers = [...(profile.layers || [])];
+            layers.splice(idx, 1);
+            profile.layers = layers;
+            profiles[selectedProfile] = profile;
+            if (selectedLayerIdx === idx) setSelectedLayerIdx(null);
+            setEditingLayerIdx(null);
+            return { ...prev, profiles };
+        });
     };
 
     if (!config) return <div style={{padding: 50, color: 'white'}}>{status}</div>;
@@ -179,9 +220,8 @@ function App() {
             
             {/* HEADER */}
             <div style={{ display: 'flex', borderBottom: '1px solid #333', alignItems: 'center', padding: '0 10px', height: '50px' }}>
-                <button style={activeTab === 'presets' ? NAV_ACTIVE : NAV_BTN} onClick={() => {setActiveTab('presets'); setSelectedItem(null);}}>Presets</button>
-                <button style={activeTab === 'profiles' ? NAV_ACTIVE : NAV_BTN} onClick={() => {setActiveTab('profiles'); setSelectedItem(null);}}>Profiles</button>
-                <button style={activeTab === 'apps' ? NAV_ACTIVE : NAV_BTN} onClick={() => {setActiveTab('apps'); setSelectedItem(null);}}>Apps</button>
+                <button style={activeTab === 'profiles' ? NAV_ACTIVE : NAV_BTN} onClick={() => {setActiveTab('profiles'); setSelectedProfile(null); setSelectedLayerIdx(null);}}>Profiles</button>
+                <button style={activeTab === 'apps' ? NAV_ACTIVE : NAV_BTN} onClick={() => {setActiveTab('apps');}}>Apps</button>
                 <div style={{flex:1}} />
                 <button onClick={handleSave} style={{ background: '#ff0e82', color: '#fff', border: 'none', padding: '6px 20px', borderRadius: 4, fontWeight: 'bold' }}>SAVE DISK</button>
             </div>
@@ -189,20 +229,25 @@ function App() {
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                 
                 {/* SIDEBAR */}
-                {activeTab !== 'apps' && (
+                {activeTab === 'profiles' && (
                     <div style={{ width: '220px', borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', background: '#0a0a0a' }}>
                         <button onClick={() => {
                              const name = prompt("Name:"); 
                              if(name) {
-                                 if(activeTab === 'presets') setConfig({...config, presets: {...config.presets, [name]: {type:'static_color', color:'#fff'}}});
-                                 if(activeTab === 'profiles') setConfig({...config, profiles: {...config.profiles, [name]: {layers:[]}}});
-                                 setSelectedItem(name);
+                                 setConfig({...config, profiles: {...config.profiles, [name]: {layers:[createDefaultLayer()]}}});
+                                 setSelectedProfile(name);
+                                 setSelectedLayerIdx(0);
                              }
                         }} style={{ background: '#111', color: '#ff0e82', border: 'none', padding: 12, borderBottom: '1px solid #333', fontWeight: 'bold' }}>+ NEW</button>
                         <div style={{ overflowY: 'auto', flex: 1 }}>
-                            {Object.keys(config[activeTab]).sort().map(name => (
-                                <div key={name} onClick={() => setSelectedItem(name)}
-                                    style={{ ...SIDEBAR_ITEM, background: selectedItem === name ? '#222' : 'transparent', color: selectedItem === name ? '#ff0e82' : '#888', borderLeft: selectedItem === name ? '3px solid #ff0e82' : '3px solid transparent' }}>
+                            {Object.keys(config.profiles).sort().map(name => (
+                                <div key={name} onClick={() => { 
+                                        setSelectedProfile(name); 
+                                        const firstIdx = (config.profiles[name]?.layers?.length ?? 0) > 0 ? 0 : null;
+                                        setSelectedLayerIdx(firstIdx);
+                                        setEditingLayerIdx(null); 
+                                    }}
+                                    style={{ ...SIDEBAR_ITEM, background: selectedProfile === name ? '#222' : 'transparent', color: selectedProfile === name ? '#ff0e82' : '#888', borderLeft: selectedProfile === name ? '3px solid #ff0e82' : '3px solid transparent' }}>
                                     {name}
                                 </div>
                             ))}
@@ -214,12 +259,15 @@ function App() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     
                     {/* VISUALIZER */}
-                    {(activeTab === 'presets' || activeTab === 'profiles') && selectedItem && (
+                    {(activeTab === 'profiles') && selectedProfile && (
                         <div style={{ height: '45%', background: '#000', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection:'column' }}>
                             <div style={{transform: 'scale(0.8)'}}>
                                 <KeyboardVisualizer 
                                     layout={layout}
                                     keyColors={getVisualizerColors()}
+                                    preset={selectedLayerIdx !== null ? (config.profiles[selectedProfile]?.layers?.[selectedLayerIdx] || null) : null}
+                                    layers={config.profiles[selectedProfile]?.layers || []}
+                                    zones={config.zones}
                                     onKeyClick={handleKeyClick} 
                                 />
                             </div>
@@ -234,52 +282,46 @@ function App() {
                     {/* EDITORS */}
                     <div style={{ flex: 1, overflowY: 'auto', background: '#111' }}>
                         
-                        {/* 1. PRESETS */}
-                        {activeTab === 'presets' && selectedItem && (
-                            <PresetEditor 
-                                preset={config.presets[selectedItem]} 
-                                onChange={(d) => {
-                                    const newP = {...config.presets};
-                                    if(d) newP[selectedItem] = d; else delete newP[selectedItem];
-                                    setConfig({...config, presets: newP});
-                                }} 
-                            />
-                        )}
-
-                        {/* 2. PROFILES */}
-                        {activeTab === 'profiles' && selectedItem && (
+                        {activeTab === 'profiles' && selectedProfile && (
                             <div style={{padding: 20}}>
                                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
-                                    <h2 style={{margin:0}}>Layers: <span style={{color: '#fff'}}>{selectedItem}</span></h2>
-                                    <button onClick={() => {
-                                        const newProf = {...config.profiles};
-                                        if(!newProf[selectedItem].layers) newProf[selectedItem].layers = [];
-                                        newProf[selectedItem].layers.push({preset: Object.keys(config.presets)[0]});
-                                        setConfig({...config, profiles: newProf});
-                                    }} style={{background:'#ff0e82', color:'white', border:'none', padding:'8px 15px', borderRadius: 4, fontWeight:'bold', cursor:'pointer'}}>+ ADD LAYER</button>
+                                    <h2 style={{margin:0}}>Layers: <span style={{color: '#fff'}}>{selectedProfile}</span></h2>
+                                    <button onClick={addLayer} style={{background:'#ff0e82', color:'white', border:'none', padding:'8px 15px', borderRadius: 4, fontWeight:'bold', cursor:'pointer'}}>+ ADD LAYER</button>
                                 </div>
 
-                                {(config.profiles[selectedItem].layers || []).map((layer, idx) => {
+                                {(config.profiles[selectedProfile].layers || []).map((layer, idx) => {
                                     const isEditing = editingLayerIdx === idx;
                                     return (
-                                        <div key={idx} style={{background: isEditing ? '#2a2a2a' : '#1a1a1a', padding: 15, marginBottom: 10, borderRadius: 5, border: isEditing ? '1px solid #ff0e82' : '1px solid #333'}}>
+                                        <div key={idx} onClick={() => setSelectedLayerIdx(idx)} style={{background: isEditing ? '#2a2a2a' : '#1a1a1a', padding: 15, marginBottom: 10, borderRadius: 5, border: isEditing ? '1px solid #ff0e82' : '1px solid #333', cursor:'pointer'}}>
                                             
                                             {/* LAYER HEADER */}
                                             <div style={{display:'flex', gap: 10, marginBottom: 10, alignItems: 'center'}}>
                                                 <div style={{fontWeight:'bold', color: '#666', width: 20}}>{idx+1}.</div>
                                                 
-                                                {/* PRESET SELECTOR */}
-                                                <select 
-                                                    style={{...SELECT_STYLE, flex: 1}}
-                                                    value={layer.preset}
-                                                    onChange={(e) => updateLayer(idx, 'preset', e.target.value)}
-                                                >
-                                                    {Object.keys(config.presets).map(p => <option key={p} value={p}>{p}</option>)}
-                                                </select>
-                                                
+                                                <div style={{flex:1}}>
+                                                    <div style={{fontSize:12, color:'#888', marginBottom:4}}>Effect Type</div>
+                                                    <select 
+                                                        style={{...SELECT_STYLE, width: '100%'}}
+                                                        value={layer.type}
+                                                        onChange={(e) => updateLayer(idx, { ...layer, type: e.target.value })}
+                                                    >
+                                                        <option value="static_color">Static Color</option>
+                                                        <option value="liquid_plasma">Liquid Plasma</option>
+                                                        <option value="reaction_diffusion">Reaction Diffusion</option>
+                                                        <option value="star_matrix">Star Matrix</option>
+                                                        <option value="smoke">Smoke</option>
+                                                        <option value="rainbow_wave">Rainbow Wave</option>
+                                                        <option value="doom_fire">Doom Fire</option>
+                                                        <option value="reactive_ripple">Reactive Ripple</option>
+                                                    </select>
+                                                </div>
+
                                                 {/* EDIT TOGGLE BUTTON */}
                                                 <button 
-                                                    onClick={() => setEditingLayerIdx(isEditing ? null : idx)}
+                                                    onClick={() => {
+                                                        setEditingLayerIdx(isEditing ? null : idx);
+                                                        setSelectedLayerIdx(idx);
+                                                    }}
                                                     style={{
                                                         background: isEditing ? '#ff0e82' : '#333',
                                                         color: 'white', border: 'none', padding: '6px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 12
@@ -289,37 +331,47 @@ function App() {
                                                 </button>
 
                                                 <button style={{color:'#666', background:'transparent', border:'none', cursor:'pointer', fontSize: 18}} 
-                                                    onClick={() => {
-                                                        const newP = {...config.profiles};
-                                                        newP[selectedItem].layers.splice(idx, 1);
-                                                        setConfig({...config, profiles: newP});
-                                                    }}>×</button>
+                                                    onClick={() => removeLayer(idx)}>×</button>
                                             </div>
-                                            
+
                                             {/* EXPANDED EDITING AREA */}
                                             {isEditing && (
                                                 <div style={{marginTop: 15, paddingTop: 15, borderTop: '1px solid #333'}}>
-                                                    <div style={{fontSize: 10, color: '#888', marginBottom: 5, textTransform: 'uppercase'}}>Toggle Zones</div>
-                                                    <div>
-                                                        {Object.keys(config.zones).map(zName => {
-                                                            const isActive = layer.zones && layer.zones.includes(zName);
-                                                            return (
-                                                                <span 
-                                                                    key={zName} 
-                                                                    onClick={() => toggleZone(idx, zName)}
-                                                                    style={isActive ? ZONE_ACTIVE : ZONE_TAG}
-                                                                >
-                                                                    {zName}
-                                                                </span>
-                                                            )
-                                                        })}
-                                                    </div>
+                                                    <div style={{display:'grid', gridTemplateColumns:'1fr', gap: 16}}>
+                                                        {/* Inline Effect Editor */}
+                                                        <EffectEditor 
+                                                            preset={layer}
+                                                            onChange={(next) => updateLayer(idx, next)}
+                                                        />
 
-                                                    <div style={{fontSize: 10, color: '#888', marginTop: 15, marginBottom: 5, textTransform: 'uppercase'}}>Manual Keys</div>
-                                                    <div style={{color: '#ccc', fontSize: 12}}>
-                                                        {layer.keys && layer.keys.length > 0 
-                                                            ? `${layer.keys.length} keys selected. (Click visualizer to add/remove)` 
-                                                            : "No manual keys. Click keys on the keyboard above to add them."}
+                                                        {/* Zones toggles */}
+                                                        <div>
+                                                            <div style={{fontSize: 10, color: '#888', marginBottom: 5, textTransform: 'uppercase'}}>Toggle Zones</div>
+                                                            <div>
+                                                                {Object.keys(config.zones).map(zName => {
+                                                                    const isActive = layer.zones && layer.zones.includes(zName);
+                                                                    return (
+                                                                        <span 
+                                                                            key={zName} 
+                                                                            onClick={() => toggleZone(idx, zName)}
+                                                                            style={isActive ? ZONE_ACTIVE : ZONE_TAG}
+                                                                        >
+                                                                            {zName}
+                                                                        </span>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Keys summary */}
+                                                        <div>
+                                                            <div style={{fontSize: 10, color: '#888', marginTop: 5, marginBottom: 5, textTransform: 'uppercase'}}>Manual Keys</div>
+                                                            <div style={{color: '#ccc', fontSize: 12}}>
+                                                                {layer.keys && layer.keys.length > 0 
+                                                                    ? `${layer.keys.length} keys selected. (Click visualizer to add/remove)` 
+                                                                    : "No manual keys. Click keys on the keyboard above to add them."}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

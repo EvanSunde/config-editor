@@ -5,51 +5,88 @@ type Config struct {
 	Device    DeviceInfo          `toml:"device" json:"device"`
 	Hypr      HyprSettings        `toml:"hypr" json:"hypr"`
 	Zones     map[string][]string `toml:"zones" json:"zones"`
-	Presets   map[string]Preset   `toml:"presets" json:"presets"`
 	Profiles  map[string]Profile  `toml:"profiles" json:"profiles"`
 	Apps      AppConfig           `toml:"apps" json:"apps"`
 	Shortcuts map[string]Shortcut `toml:"shortcuts" json:"shortcuts"`
 }
 
 type DeviceInfo struct {
-	Name         string `toml:"name" json:"name"`
-	PacketHeader []int  `toml:"packet_header" json:"packet_header"`
-	Layout       string `toml:"layout" json:"layout"`
-	// ... add other device fields if you need them editable
+	Name               string `toml:"name" json:"name"`
+	VendorID           int    `toml:"vendor_id" json:"vendor_id"`
+	ProductID          int    `toml:"product_id" json:"product_id"`
+	PacketHeader       []int  `toml:"packet_header" json:"packet_header"`
+	PacketLength       int    `toml:"packet_length" json:"packet_length"`
+	Layout             string `toml:"layout" json:"layout"`
+	Keycodes           string `toml:"keycodes" json:"keycodes"`
+	InterfaceUsagePage int    `toml:"interface_usage_page" json:"interface_usage_page"`
+	InterfaceUsage     int    `toml:"interface_usage" json:"interface_usage"`
+	Transport          string `toml:"transport" json:"transport"`
+	FrameIntervalMS    int    `toml:"frame_interval_ms" json:"frame_interval_ms"`
 }
 
 type HyprSettings struct {
 	Enabled                bool   `toml:"enabled" json:"enabled"`
-	ShortcutsOverlayPreset string `toml:"shortcuts_overlay_preset" json:"shortcuts_overlay_preset"`
+	ShortcutsOverlayEffect Effect `toml:"shortcuts_overlay_effect" json:"shortcuts_overlay_effect"`
 }
 
-// Preset is the "Super Struct" handling all effect types
-type Preset struct {
+// Effect describes any visual effect configuration block
+type Effect struct {
 	Type string `toml:"type" json:"type"`
 
 	// Color Properties
 	Color      string   `toml:"color,omitempty" json:"color,omitempty"`
 	Colors     []string `toml:"colors,omitempty" json:"colors,omitempty"`
 	Background string   `toml:"background,omitempty" json:"background,omitempty"`
+	BaseColor  string   `toml:"base_color,omitempty" json:"base_color,omitempty"`
+	Star       string   `toml:"star,omitempty" json:"star,omitempty"`
 	Tint       string   `toml:"tint,omitempty" json:"tint,omitempty"`
 	TintMix    float64  `toml:"tint_mix,omitempty" json:"tint_mix,omitempty"`
+	ColorLow   string   `toml:"color_low,omitempty" json:"color_low,omitempty"`
+	ColorHigh  string   `toml:"color_high,omitempty" json:"color_high,omitempty"`
 
 	// Physics / Animation Properties
 	Speed          float64 `toml:"speed,omitempty" json:"speed,omitempty"`
 	Scale          float64 `toml:"scale,omitempty" json:"scale,omitempty"`
 	Density        float64 `toml:"density,omitempty" json:"density,omitempty"`
 	WaveComplexity int     `toml:"wave_complexity,omitempty" json:"wave_complexity,omitempty"`
+	MixMode        string  `toml:"mix_mode,omitempty" json:"mix_mode,omitempty"`
+	Octaves        int     `toml:"octaves,omitempty" json:"octaves,omitempty"`
+	Persistence    float64 `toml:"persistence,omitempty" json:"persistence,omitempty"`
+	Lacunarity     float64 `toml:"lacunarity,omitempty" json:"lacunarity,omitempty"`
+	DriftX         float64 `toml:"drift_x,omitempty" json:"drift_x,omitempty"`
+	DriftY         float64 `toml:"drift_y,omitempty" json:"drift_y,omitempty"`
+	Contrast       float64 `toml:"contrast,omitempty" json:"contrast,omitempty"`
+	WaveSpeed      float64 `toml:"wave_speed,omitempty" json:"wave_speed,omitempty"`
+	DecayTime      float64 `toml:"decay_time,omitempty" json:"decay_time,omitempty"`
+	Thickness      float64 `toml:"thickness,omitempty" json:"thickness,omitempty"`
+	Intensity      float64 `toml:"intensity,omitempty" json:"intensity,omitempty"`
+	History        float64 `toml:"history,omitempty" json:"history,omitempty"`
+	Cooling        float64 `toml:"cooling,omitempty" json:"cooling,omitempty"`
+	SparkChance    float64 `toml:"spark_chance,omitempty" json:"spark_chance,omitempty"`
+	SparkIntensity float64 `toml:"spark_intensity,omitempty" json:"spark_intensity,omitempty"`
 
 	// Reaction Diffusion Specifics
-	Du   float64 `toml:"du,omitempty" json:"du,omitempty"`
-	Dv   float64 `toml:"dv,omitempty" json:"dv,omitempty"`
-	Feed float64 `toml:"feed,omitempty" json:"feed,omitempty"`
-	Kill float64 `toml:"kill,omitempty" json:"kill,omitempty"`
+	Du     float64 `toml:"du,omitempty" json:"du,omitempty"`
+	Dv     float64 `toml:"dv,omitempty" json:"dv,omitempty"`
+	Feed   float64 `toml:"feed,omitempty" json:"feed,omitempty"`
+	Kill   float64 `toml:"kill,omitempty" json:"kill,omitempty"`
+	Width  int     `toml:"width,omitempty" json:"width,omitempty"`
+	Height int     `toml:"height,omitempty" json:"height,omitempty"`
+	Steps  int     `toml:"steps,omitempty" json:"steps,omitempty"`
+	Zoom   float64 `toml:"zoom,omitempty" json:"zoom,omitempty"`
 
 	// Reactive Properties
 	Reactive             bool    `toml:"reactive,omitempty" json:"reactive,omitempty"`
 	ReactiveDisplacement float64 `toml:"reactive_displacement,omitempty" json:"reactive_displacement,omitempty"`
 	ReactivePush         bool    `toml:"reactive_push,omitempty" json:"reactive_push,omitempty"`
+	ReactivePhaseShift   float64 `toml:"reactive_phase_shift,omitempty" json:"reactive_phase_shift,omitempty"`
+	ReactivePushDuration float64 `toml:"reactive_push_duration,omitempty" json:"reactive_push_duration,omitempty"`
+
+	// Injection / Ripple Extras
+	InjectionAmount  float64 `toml:"injection_amount,omitempty" json:"injection_amount,omitempty"`
+	InjectionRadius  float64 `toml:"injection_radius,omitempty" json:"injection_radius,omitempty"`
+	InjectionDecay   float64 `toml:"injection_decay,omitempty" json:"injection_decay,omitempty"`
+	InjectionHistory float64 `toml:"injection_history,omitempty" json:"injection_history,omitempty"`
 }
 
 type Profile struct {
@@ -57,9 +94,9 @@ type Profile struct {
 }
 
 type Layer struct {
-	PresetName string   `toml:"preset" json:"preset"`
-	Zones      []string `toml:"zones,omitempty" json:"zones,omitempty"`
-	Keys       []string `toml:"keys,omitempty" json:"keys,omitempty"`
+	Effect
+	Zones []string `toml:"zones,omitempty" json:"zones,omitempty"`
+	Keys  []string `toml:"keys,omitempty" json:"keys,omitempty"`
 }
 
 type AppConfig struct {

@@ -105,41 +105,96 @@ const computeAnimatedColor = (key, idx, frame, preset, palette, center) => {
     }
 };
 
-export default function KeyboardVisualizer({ layout, keyColors = {}, preset, onKeyClick }) {
+export default function KeyboardVisualizer({ layout, keyColors = {}, preset, layers = [], zones = {}, onKeyClick }) {
 
     if (!layout || layout.length === 0) return <div style={{ color: '#444' }}>No Layout Loaded</div>;
 
-    const animated = !!(preset && ANIMATED_TYPES.has(preset.type));
+    const usingLayers = Array.isArray(layers) && layers.length > 0;
+    const anyAnimated = usingLayers ? layers.some(l => ANIMATED_TYPES.has(l.type)) : !!(preset && ANIMATED_TYPES.has(preset.type));
     const [frame, setFrame] = useState(0);
 
     useEffect(() => {
-        if (!animated) return;
-        let raf;
-        const step = () => {
+        if (!anyAnimated) return;
+        // Throttle to ~30 FPS for lower CPU use
+        const interval = setInterval(() => {
             setFrame((prev) => (prev + 1) % 60000);
-            raf = requestAnimationFrame(step);
-        };
-        raf = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(raf);
-    }, [animated]);
+        }, 1000 / 30);
+        return () => clearInterval(interval);
+    }, [anyAnimated]);
 
     useEffect(() => {
-        if (!animated) setFrame(0);
-    }, [animated, preset?.type]);
+        if (!anyAnimated) setFrame(0);
+    }, [anyAnimated, preset?.type, usingLayers]);
 
     const center = useMemo(() => computeCenter(layout), [layout]);
-    const animatedColors = useMemo(() => {
-        if (!animated) return null;
-        const palette = (preset.colors && preset.colors.length > 0)
-            ? preset.colors
-            : [preset.color, preset.color_b, preset.star, '#ff0e82'].filter(Boolean);
-        return layout.reduce((acc, key, idx) => {
-            acc[key.label] = computeAnimatedColor(key, idx, frame, preset, palette, center);
-            return acc;
-        }, {});
-    }, [animated, center, frame, layout, preset]);
+    const zoneMap = zones || {};
+    const coveragePriority = (layer, label) => {
+        const inKeys = Array.isArray(layer.keys) && layer.keys.includes(label);
+        if (inKeys) return 3;
+        const inZones = Array.isArray(layer.zones) && layer.zones.some(z => (zoneMap[z] || []).includes(label));
+        if (inZones) return 2;
+        const isBackground = (!layer.zones || layer.zones.length === 0) && (!layer.keys || layer.keys.length === 0);
+        return isBackground ? 1 : 0;
+    };
 
-    const displayColors = animatedColors || keyColors;
+    const getStaticColor = (layer) => {
+        if (layer.type === 'static_color' && layer.color) return layer.color;
+        if (layer.type === 'reaction_diffusion') return layer.color_b || layer.color_a || '#77ffee';
+        if (layer.type === 'star_matrix') return layer.star || '#ffffff';
+        if (Array.isArray(layer.colors) && layer.colors.length > 0) return layer.colors[0];
+        if (layer.tint) return layer.tint;
+        if (layer.base_color) return layer.base_color;
+        if (layer.background) return layer.background;
+        if (layer.color) return layer.color;
+        return '#555';
+    };
+
+    const displayColors = useMemo(() => {
+        // Layered composite path
+        if (usingLayers) {
+            const colorMap = {};
+            const priorityMap = {};
+            const indexMap = {};
+
+            layers.forEach((layer, layerIdx) => {
+                const isAnimated = ANIMATED_TYPES.has(layer.type);
+                const palette = isAnimated && (layer.colors && layer.colors.length > 0)
+                    ? layer.colors
+                    : isAnimated ? [layer.color, layer.color_b, layer.star, layer.tint, '#ff0e82'].filter(Boolean) : null;
+
+                layout.forEach((key, keyIdx) => {
+                    const pr = coveragePriority(layer, key.label);
+                    if (pr === 0) return;
+                    const curPr = priorityMap[key.label] ?? -1;
+                    const curIdx = indexMap[key.label] ?? -1;
+                    if (pr > curPr || (pr === curPr && layerIdx >= curIdx)) {
+                        const color = isAnimated
+                            ? computeAnimatedColor(key, keyIdx, frame, layer, palette, center)
+                            : getStaticColor(layer);
+                        colorMap[key.label] = color;
+                        priorityMap[key.label] = pr;
+                        indexMap[key.label] = layerIdx;
+                    }
+                });
+            });
+
+            return colorMap;
+        }
+
+        // Single animated preset fallback
+        if (preset && ANIMATED_TYPES.has(preset.type)) {
+            const palette = (preset.colors && preset.colors.length > 0)
+                ? preset.colors
+                : [preset.color, preset.color_b, preset.star, '#ff0e82'].filter(Boolean);
+            return layout.reduce((acc, key, idx) => {
+                acc[key.label] = computeAnimatedColor(key, idx, frame, preset, palette, center);
+                return acc;
+            }, {});
+        }
+
+        // Static map fallback
+        return keyColors;
+    }, [usingLayers, layers, layout, frame, center, preset, keyColors, zoneMap]);
 
     const width = Math.max(...layout.map(k => k.x + k.w)) * KEY_SIZE + 20;
     const height = Math.max(...layout.map(k => k.y + k.h)) * KEY_SIZE + 20;
@@ -169,7 +224,8 @@ export default function KeyboardVisualizer({ layout, keyColors = {}, preset, onK
                             width: (key.w * KEY_SIZE) - 4,
                             height: (key.h || 1) * KEY_SIZE - 4,
                             background: bg,
-                            boxShadow: isLit ? `0 0 12px ${bg}` : 'none',
+                            // lighter shadow for performance
+                            boxShadow: isLit ? `0 0 6px ${bg}` : 'none',
                             color: isLit ? '#000' : '#888',
                             borderRadius: '4px',
                             display: 'flex',
