@@ -109,8 +109,8 @@ func (l *Layer) InflateFromFlat() *typedConfig {
 		t.ReactiveRipple = &ReactiveRippleEffect{Color: l.Color, BaseColor: l.BaseColor, WaveSpeed: l.WaveSpeed, DecayTime: l.DecayTime, Thickness: l.Thickness, Intensity: l.Intensity}
 	case "reaction_diffusion":
 		t.ReactionDiffusion = &ReactionDiffusionEffect{
-			ColorA: l.BaseColor,
-			ColorB: l.Color,
+			ColorA: l.ColorA,
+			ColorB: l.ColorB,
 			Du:     l.Du, Dv: l.Dv, Feed: l.Feed, Kill: l.Kill,
 			Width: l.Width, Height: l.Height, Steps: l.Steps, Zoom: l.Zoom, Speed: l.Speed,
 			InjectionAmount: l.InjectionAmount, InjectionRadius: l.InjectionRadius, InjectionDecay: l.InjectionDecay, InjectionHistory: l.InjectionHistory,

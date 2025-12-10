@@ -99,8 +99,9 @@ func (a *App) SaveConfig(config Config) error {
 	defer f.Close()
 
 	encoder := toml.NewEncoder(f)
-	// Optionally indent if your library supports it, otherwise default encoding
-	if err := encoder.Encode(config); err != nil {
+	// Build and encode a pruned representation so only active layer fields are written
+	pruned := buildPrunedConfig(config)
+	if err := encoder.Encode(pruned); err != nil {
 		return fmt.Errorf("could not encode TOML: %w", err)
 	}
 
