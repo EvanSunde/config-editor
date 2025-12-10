@@ -81,24 +81,39 @@ const computeAnimatedColor = (key, idx, frame, preset, palette, center) => {
 
     switch (preset.type) {
         case 'rainbow_wave': {
-            const hue = (time * 40 + key.x * 25 + key.y * 15) % 360;
-            return hslToHex(hue, 85, 55);
+            const speed = (preset.speed ?? 0.8);
+            const scale = (preset.scale ?? 0.5);
+            const hue = (time * 40 * speed + key.x * 25 * scale + key.y * 15 * scale) % 360;
+            let color = hslToHex(hue, 85, 55);
+            const tintMix = preset.tint_mix ?? 0;
+            if (preset.tint && tintMix > 0) color = mixHex(color, preset.tint, clamp(tintMix, 0, 1));
+            return color;
         }
         case 'liquid_plasma': {
-            const noise = Math.sin(key.x * 0.9 + time) + Math.cos(key.y * 1.1 - time * 0.7);
+            const speed = (preset.speed ?? 0.5);
+            const scale = (preset.scale ?? 1.0);
+            const noise = Math.sin(key.x * (0.9 * scale) + time * speed) + Math.cos(key.y * (1.1 * scale) - time * 0.7 * speed);
             const normalized = (noise + 2) / 4; // [-2,2] -> [0,1]
             return paletteBlend(palette, normalized);
         }
         case 'reactive_ripple': {
-            const wave = Math.sin(distance * 1.5 - time * 3);
-            const normalized = (wave + 1) / 2;
-            return paletteBlend(palette, normalized);
+            const ws = (preset.wave_speed ?? 2.5);
+            const th = (preset.thickness ?? 0.2);
+            const it = (preset.intensity ?? 1.0);
+            const k = 1.5 + th * 2.0;
+            const wave = Math.sin(distance * k - time * ws);
+            const t = clamp(((wave + 1) / 2) * it, 0, 1);
+            const base = preset.base_color || '#000000';
+            const col = preset.color || palette[0] || '#00ff00';
+            return mixHex(base, col, t);
         }
         case 'star_matrix': {
-            const twinkle = (Math.sin((frame + idx * 17) * 0.25) + 1) / 2;
+            const rate = 0.1 + (preset.speed ?? 0.5) * 0.5;
+            const twinkle = (Math.sin((frame + idx * 17) * rate) + 1) / 2;
             const background = preset.background || '#050505';
             const star = preset.star || palette[0] || '#ffffff';
-            return twinkle > 0.72 ? star : mixHex(background, star, twinkle * 0.3);
+            const threshold = 1 - (preset.density ?? 0.2);
+            return twinkle > threshold ? star : mixHex(background, star, twinkle * 0.3);
         }
         default:
             return palette[0] || '#ff0e82';

@@ -23,6 +23,38 @@ const ZONE_TAG = { padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cu
 const ZONE_ACTIVE = { ...ZONE_TAG, background: '#ff0e82', color: 'white', borderColor: '#ff0e82' };
 const createDefaultLayer = () => ({ type: 'static_color', color: '#ffffff' });
 
+// Keep TOML/JSON clean: when switching type, drop unrelated fields
+const REACTIVE_FIELDS = [
+  'reactive','reactive_displacement','reactive_push','reactive_phase_shift','reactive_push_duration',
+  'reactive_color','reactive_history','reactive_decay','reactive_spread','reactive_intensity'
+];
+const EFFECT_FIELDS = {
+  static_color: ['color'],
+  rainbow_wave: ['speed','scale','tint','tint_mix','colors'],
+  liquid_plasma: ['colors','speed','scale','wave_complexity','mix_mode'],
+  smoke: ['speed','scale','octaves','persistence','lacunarity','drift_x','drift_y','contrast','color_low','color_high'],
+  star_matrix: ['star','background','density','speed'],
+  doom_fire: ['speed','cooling','spark_chance','spark_intensity'],
+  reactive_ripple: ['color','base_color','wave_speed','decay_time','thickness','intensity'],
+  reaction_diffusion: ['color_a','color_b','du','dv','feed','kill','width','height','steps','zoom','speed','injection_amount','injection_radius','injection_decay','injection_history']
+};
+const EFFECT_DEFAULTS = {
+  static_color: { color: '#ffffff' },
+  rainbow_wave: { speed: 0.8, scale: 0.5, tint: '#ffffff', tint_mix: 0 },
+  liquid_plasma: { speed: 0.5, scale: 1.0, colors: ['#ff00ff','#00ffff'], wave_complexity: 1, mix_mode: 'linear' },
+  smoke: { speed: 0.5, scale: 1.0, octaves: 3, persistence: 0.5, lacunarity: 2.0, drift_x: 0, drift_y: 0, contrast: 1, color_low: '#222222', color_high: '#ffffff' },
+  star_matrix: { star: '#ffffff', background: '#000000', density: 0.2, speed: 0.5 },
+  doom_fire: { speed: 1.0, cooling: 0.05, spark_chance: 0.5, spark_intensity: 1.0 },
+  reactive_ripple: { color: '#00FF00', base_color: '#000000', wave_speed: 2.5, decay_time: 1.5, thickness: 0.2, intensity: 1.0 },
+  reaction_diffusion: { color_a: '#000000', color_b: '#ffffff', du: 0.16, dv: 0.08, feed: 0.055, kill: 0.062, width: 64, height: 32, steps: 8, zoom: 1.0, speed: 1.0, injection_amount: 0, injection_radius: 0, injection_decay: 0, injection_history: 0 }
+};
+const sanitizeLayerForType = (layer, newType) => {
+  const keep = new Set(['type','zones','keys', ...(EFFECT_FIELDS[newType] || []), ...REACTIVE_FIELDS]);
+  const next = { ...layer, type: newType, ...(EFFECT_DEFAULTS[newType] || {}) };
+  Object.keys(next).forEach(k => { if (!keep.has(k)) delete next[k]; });
+  return next;
+};
+
 const getLayerPreviewColor = (layer) => {
     if (!layer) return '#555';
     if (layer.type === 'static_color' && layer.color) return layer.color;
@@ -354,7 +386,7 @@ function App() {
                                                     <select 
                                                         style={{...SELECT_STYLE, width: '100%'}}
                                                         value={layer.type}
-                                                        onChange={(e) => updateLayer(idx, { ...layer, type: e.target.value })}
+                                                        onChange={(e) => updateLayer(idx, sanitizeLayerForType(layer, e.target.value))}
                                                     >
                                                         <option value="static_color">Static Color</option>
                                                         <option value="liquid_plasma">Liquid Plasma</option>

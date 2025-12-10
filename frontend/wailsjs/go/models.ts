@@ -94,6 +94,8 @@ export namespace main {
 	    cooling?: number;
 	    spark_chance?: number;
 	    spark_intensity?: number;
+	    color_a?: string;
+	    color_b?: string;
 	    du?: number;
 	    dv?: number;
 	    feed?: number;
@@ -107,6 +109,11 @@ export namespace main {
 	    reactive_push?: boolean;
 	    reactive_phase_shift?: number;
 	    reactive_push_duration?: number;
+	    reactive_color?: string;
+	    reactive_history?: number;
+	    reactive_decay?: number;
+	    reactive_spread?: number;
+	    reactive_intensity?: number;
 	    injection_amount?: number;
 	    injection_radius?: number;
 	    injection_decay?: number;
@@ -149,6 +156,8 @@ export namespace main {
 	        this.cooling = source["cooling"];
 	        this.spark_chance = source["spark_chance"];
 	        this.spark_intensity = source["spark_intensity"];
+	        this.color_a = source["color_a"];
+	        this.color_b = source["color_b"];
 	        this.du = source["du"];
 	        this.dv = source["dv"];
 	        this.feed = source["feed"];
@@ -162,6 +171,11 @@ export namespace main {
 	        this.reactive_push = source["reactive_push"];
 	        this.reactive_phase_shift = source["reactive_phase_shift"];
 	        this.reactive_push_duration = source["reactive_push_duration"];
+	        this.reactive_color = source["reactive_color"];
+	        this.reactive_history = source["reactive_history"];
+	        this.reactive_decay = source["reactive_decay"];
+	        this.reactive_spread = source["reactive_spread"];
+	        this.reactive_intensity = source["reactive_intensity"];
 	        this.injection_amount = source["injection_amount"];
 	        this.injection_radius = source["injection_radius"];
 	        this.injection_decay = source["injection_decay"];
@@ -230,6 +244,8 @@ export namespace main {
 	    cooling?: number;
 	    spark_chance?: number;
 	    spark_intensity?: number;
+	    color_a?: string;
+	    color_b?: string;
 	    du?: number;
 	    dv?: number;
 	    feed?: number;
@@ -243,6 +259,11 @@ export namespace main {
 	    reactive_push?: boolean;
 	    reactive_phase_shift?: number;
 	    reactive_push_duration?: number;
+	    reactive_color?: string;
+	    reactive_history?: number;
+	    reactive_decay?: number;
+	    reactive_spread?: number;
+	    reactive_intensity?: number;
 	    injection_amount?: number;
 	    injection_radius?: number;
 	    injection_decay?: number;
@@ -283,6 +304,8 @@ export namespace main {
 	        this.cooling = source["cooling"];
 	        this.spark_chance = source["spark_chance"];
 	        this.spark_intensity = source["spark_intensity"];
+	        this.color_a = source["color_a"];
+	        this.color_b = source["color_b"];
 	        this.du = source["du"];
 	        this.dv = source["dv"];
 	        this.feed = source["feed"];
@@ -296,6 +319,11 @@ export namespace main {
 	        this.reactive_push = source["reactive_push"];
 	        this.reactive_phase_shift = source["reactive_phase_shift"];
 	        this.reactive_push_duration = source["reactive_push_duration"];
+	        this.reactive_color = source["reactive_color"];
+	        this.reactive_history = source["reactive_history"];
+	        this.reactive_decay = source["reactive_decay"];
+	        this.reactive_spread = source["reactive_spread"];
+	        this.reactive_intensity = source["reactive_intensity"];
 	        this.injection_amount = source["injection_amount"];
 	        this.injection_radius = source["injection_radius"];
 	        this.injection_decay = source["injection_decay"];

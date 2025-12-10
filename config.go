@@ -66,6 +66,8 @@ type Effect struct {
 	SparkIntensity float64 `toml:"spark_intensity,omitempty" json:"spark_intensity,omitempty"`
 
 	// Reaction Diffusion Specifics
+	ColorA string  `toml:"color_a,omitempty" json:"color_a,omitempty"`
+	ColorB string  `toml:"color_b,omitempty" json:"color_b,omitempty"`
 	Du     float64 `toml:"du,omitempty" json:"du,omitempty"`
 	Dv     float64 `toml:"dv,omitempty" json:"dv,omitempty"`
 	Feed   float64 `toml:"feed,omitempty" json:"feed,omitempty"`
@@ -81,6 +83,11 @@ type Effect struct {
 	ReactivePush         bool    `toml:"reactive_push,omitempty" json:"reactive_push,omitempty"`
 	ReactivePhaseShift   float64 `toml:"reactive_phase_shift,omitempty" json:"reactive_phase_shift,omitempty"`
 	ReactivePushDuration float64 `toml:"reactive_push_duration,omitempty" json:"reactive_push_duration,omitempty"`
+	ReactiveColor        string  `toml:"reactive_color,omitempty" json:"reactive_color,omitempty"`
+	ReactiveHistory      float64 `toml:"reactive_history,omitempty" json:"reactive_history,omitempty"`
+	ReactiveDecay        float64 `toml:"reactive_decay,omitempty" json:"reactive_decay,omitempty"`
+	ReactiveSpread       float64 `toml:"reactive_spread,omitempty" json:"reactive_spread,omitempty"`
+	ReactiveIntensity    float64 `toml:"reactive_intensity,omitempty" json:"reactive_intensity,omitempty"`
 
 	// Injection / Ripple Extras
 	InjectionAmount  float64 `toml:"injection_amount,omitempty" json:"injection_amount,omitempty"`

@@ -79,6 +79,19 @@ func (a *App) SaveConfig(config Config) error {
 
 	path := filepath.Join(dir, "config.toml")
 
+	// Prune unrelated effect fields so layers only persist fields for their active type
+	if config.Profiles != nil {
+		for name, prof := range config.Profiles {
+			if len(prof.Layers) > 0 {
+				for i := range prof.Layers {
+					t := prof.Layers[i].InflateFromFlat()
+					prof.Layers[i].FlattenToFlat(t)
+				}
+			}
+			config.Profiles[name] = prof
+		}
+	}
+
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("could not open file for writing: %w", err)

@@ -82,9 +82,32 @@ export default function PresetEditor({ preset, onChange }) {
             {preset.type === 'static_color' && (
                 <div style={{ background: '#222', padding: 15, borderRadius: 8 }}>
                     <label style={LABEL_STYLE}>Base Color</label>
-                    <div style={{display: 'flex', alignItems: 'center'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
                         <ColorSwatch color={preset.color || '#ffffff'} onChange={c => handleChange('color', c)} />
-                        <input type="text" value={preset.color} onChange={e => handleChange('color', e.target.value)} style={{...INPUT_STYLE, width: 120, margin: 0}} />
+                        <input type="text" value={preset.color || '#ffffff'} onChange={e => handleChange('color', e.target.value)} style={{...INPUT_STYLE, width: 120, margin: 0}} />
+                    </div>
+                </div>
+            )}
+
+            {/* --- RAINBOW WAVE --- */}
+            {preset.type === 'rainbow_wave' && (
+                <div style={{ background: '#222', padding: 15, borderRadius: 8 }}>
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15}}>
+                        <label style={LABEL_STYLE}>Speed ({preset.speed ?? 0.8})
+                            <input type="range" min="0.1" max="3" step="0.1" value={preset.speed ?? 0.8} onChange={e => handleChange('speed', parseFloat(e.target.value))} />
+                        </label>
+                        <label style={LABEL_STYLE}>Scale ({preset.scale ?? 0.5})
+                            <input type="range" min="0.05" max="1" step="0.05" value={preset.scale ?? 0.5} onChange={e => handleChange('scale', parseFloat(e.target.value))} />
+                        </label>
+                    </div>
+                    <div style={{display:'flex', gap: 20, marginTop: 15}}>
+                        <div>
+                            <span style={{...LABEL_STYLE, marginBottom: 5}}>Tint</span>
+                            <ColorSwatch color={preset.tint || '#ffffff'} onChange={c => handleChange('tint', c)} />
+                        </div>
+                        <label style={{...LABEL_STYLE, flex:1}}>Tint Mix ({preset.tint_mix ?? 0})
+                            <input type="range" min="0" max="1" step="0.05" value={preset.tint_mix ?? 0} onChange={e => handleChange('tint_mix', parseFloat(e.target.value))} />
+                        </label>
                     </div>
                 </div>
             )}
@@ -130,7 +153,52 @@ export default function PresetEditor({ preset, onChange }) {
                         <label style={LABEL_STYLE}>Scale ({preset.scale})
                             <input type="range" min="0.1" max="5" step="0.1" value={preset.scale || 1.0} onChange={e => handleChange('scale', parseFloat(e.target.value))} style={{width: '100%'}}/>
                         </label>
+                        {preset.type === 'liquid_plasma' && (
+                            <>
+                                <label style={LABEL_STYLE}>Wave Complexity ({preset.wave_complexity || 1})
+                                    <input type="number" min="1" max="10" value={preset.wave_complexity || 1} onChange={e => handleChange('wave_complexity', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Mix Mode
+                                    <input type="text" value={preset.mix_mode || 'linear'} onChange={e => handleChange('mix_mode', e.target.value)} style={INPUT_STYLE}/>
+                                </label>
+                            </>
+                        )}
+                        {preset.type === 'smoke' && (
+                            <>
+                                <label style={LABEL_STYLE}>Octaves
+                                    <input type="number" min="1" max="8" value={preset.octaves || 3} onChange={e => handleChange('octaves', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Persistence
+                                    <input type="number" step="0.1" value={preset.persistence || 0.5} onChange={e => handleChange('persistence', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Lacunarity
+                                    <input type="number" step="0.1" value={preset.lacunarity || 2.0} onChange={e => handleChange('lacunarity', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Drift X
+                                    <input type="number" step="0.1" value={preset.drift_x || 0} onChange={e => handleChange('drift_x', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Drift Y
+                                    <input type="number" step="0.1" value={preset.drift_y || 0} onChange={e => handleChange('drift_y', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Contrast
+                                    <input type="number" step="0.1" value={preset.contrast || 1} onChange={e => handleChange('contrast', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                            </>
+                        )}
                     </div>
+
+                    {preset.type === 'smoke' && (
+                        <div style={{display: 'flex', gap: 30, marginTop: 15}}>
+                            <div>
+                                <span style={{...LABEL_STYLE, marginBottom: 5}}>Color Low</span>
+                                <ColorSwatch color={preset.color_low || '#222222'} onChange={c => handleChange('color_low', c)} />
+                            </div>
+                            <div>
+                                <span style={{...LABEL_STYLE, marginBottom: 5}}>Color High</span>
+                                <ColorSwatch color={preset.color_high || '#ffffff'} onChange={c => handleChange('color_high', c)} />
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
@@ -151,7 +219,7 @@ export default function PresetEditor({ preset, onChange }) {
                          </div>
                     </div>
 
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px'}}>
                         <label style={LABEL_STYLE}>Feed Rate
                             <input type="number" step="0.001" value={preset.feed} onChange={e => handleChange('feed', parseFloat(e.target.value))} style={INPUT_STYLE}/>
                         </label>
@@ -163,6 +231,33 @@ export default function PresetEditor({ preset, onChange }) {
                         </label>
                         <label style={LABEL_STYLE}>Diffusion B (Dv)
                             <input type="number" step="0.0001" value={preset.dv} onChange={e => handleChange('dv', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Width
+                            <input type="number" value={preset.width || 64} onChange={e => handleChange('width', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Height
+                            <input type="number" value={preset.height || 32} onChange={e => handleChange('height', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Steps
+                            <input type="number" value={preset.steps || 8} onChange={e => handleChange('steps', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Zoom
+                            <input type="number" step="0.1" value={preset.zoom || 1} onChange={e => handleChange('zoom', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Speed
+                            <input type="number" step="0.1" value={preset.speed || 1} onChange={e => handleChange('speed', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Injection Amount
+                            <input type="number" step="0.05" value={preset.injection_amount || 0} onChange={e => handleChange('injection_amount', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Injection Radius
+                            <input type="number" step="0.01" value={preset.injection_radius || 0} onChange={e => handleChange('injection_radius', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Injection Decay
+                            <input type="number" step="0.1" value={preset.injection_decay || 0} onChange={e => handleChange('injection_decay', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Injection History
+                            <input type="number" step="0.1" value={preset.injection_history || 0} onChange={e => handleChange('injection_history', parseFloat(e.target.value))} style={INPUT_STYLE}/>
                         </label>
                     </div>
                 </>
@@ -233,14 +328,39 @@ export default function PresetEditor({ preset, onChange }) {
                     />
                     <span style={{fontWeight: 'bold', color: '#ff0e82'}}>ENABLE REACTIVE (Typing Effects)</span>
                 </label>
-                
+
                 {preset.reactive && (
-                    <div style={{paddingLeft: 30, marginTop: 10}}>
-                         <label style={LABEL_STYLE}>Displacement / Splash Size
+                    <div style={{paddingLeft: 30, marginTop: 12, display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap: 16}}>
+                        <label style={LABEL_STYLE}>Displacement / Splash Size
                             <input type="range" min="0" max="5" step="0.1" value={preset.reactive_displacement || 1.0} onChange={e => handleChange('reactive_displacement', parseFloat(e.target.value))} style={{width: '100%'}}/>
                         </label>
-                        <label style={LABEL_STYLE}>Push Strength
-                             <input type="number" value={preset.reactive_push_duration || 0.3} onChange={e => handleChange('reactive_push_duration', parseFloat(e.target.value))} style={{...INPUT_STYLE, width: 80}}/>
+                        <label style={LABEL_STYLE}>Push Enabled
+                            <input type="checkbox" checked={preset.reactive_push || false} onChange={e => handleChange('reactive_push', e.target.checked)} style={{marginLeft: 10}}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Push Duration (s)
+                            <input type="number" min="0" step="0.05" value={preset.reactive_push_duration || 0.3} onChange={e => handleChange('reactive_push_duration', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Phase Shift
+                            <input type="number" step="0.1" value={preset.reactive_phase_shift || 0} onChange={e => handleChange('reactive_phase_shift', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                        </label>
+
+                        <div>
+                            <span style={{display:'block', marginBottom: 5, fontSize: 10, color:'#888'}}>Reactive Color</span>
+                            <ColorSwatch color={preset.reactive_color || preset.color || '#00ff88'} onChange={c => handleChange('reactive_color', c)} />
+                        </div>
+
+                        <label style={LABEL_STYLE}>History
+                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_history || 0} onChange={e => handleChange('reactive_history', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                        </label>
+
+                        <label style={LABEL_STYLE}>Decay
+                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_decay || 0} onChange={e => handleChange('reactive_decay', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Spread
+                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_spread || 0} onChange={e => handleChange('reactive_spread', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Intensity
+                            <input type="range" min="0" max="3" step="0.05" value={preset.reactive_intensity || 1} onChange={e => handleChange('reactive_intensity', parseFloat(e.target.value))} style={{width:'100%'}}/>
                         </label>
                     </div>
                 )}
