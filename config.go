@@ -106,11 +106,26 @@ type AppConfig struct {
 }
 
 type Shortcut struct {
-	Color     string   `toml:"color,omitempty" json:"color,omitempty"`
-	Ctrl      []string `toml:"ctrl,omitempty" json:"ctrl,omitempty"`
-	Shift     []string `toml:"shift,omitempty" json:"shift,omitempty"`
-	Alt       []string `toml:"alt,omitempty" json:"alt,omitempty"`
-	Win       []string `toml:"win,omitempty" json:"win,omitempty"`
-	CtrlShift []string `toml:"ctrl_shift,omitempty" json:"ctrl_shift,omitempty"`
-	// ... add other combos as needed
+	Color        string   `toml:"color,omitempty" json:"color,omitempty"`
+	Ctrl         []string `toml:"ctrl,omitempty" json:"ctrl,omitempty"`
+	CtrlAlt      []string `toml:"ctrl_alt,omitempty" json:"ctrl_alt,omitempty"`
+	CtrlAltShift []string `toml:"ctrl_alt_shift,omitempty" json:"ctrl_alt_shift,omitempty"`
+	CtrlShift    []string `toml:"ctrl_shift,omitempty" json:"ctrl_shift,omitempty"`
+	CtrlShiftAlt []string `toml:"ctrl_shift_alt,omitempty" json:"ctrl_shift_alt,omitempty"`
+
+	Shift    []string `toml:"shift,omitempty" json:"shift,omitempty"`
+	ShiftAlt []string `toml:"shift_alt,omitempty" json:"shift_alt,omitempty"`
+
+	Alt      []string `toml:"alt,omitempty" json:"alt,omitempty"`
+	AltShift []string `toml:"alt_shift,omitempty" json:"alt_shift,omitempty"`
+	AltCtrl  []string `toml:"alt_ctrl,omitempty" json:"alt_ctrl,omitempty"`
+
+	Win             []string `toml:"win,omitempty" json:"win,omitempty"`
+	WinShift        []string `toml:"win_shift,omitempty" json:"win_shift,omitempty"`
+	WinShiftAlt     []string `toml:"win_shift_alt,omitempty" json:"win_shift_alt,omitempty"`
+	WinAlt          []string `toml:"win_alt,omitempty" json:"win_alt,omitempty"`
+	WinCtrl         []string `toml:"win_ctrl,omitempty" json:"win_ctrl,omitempty"`
+	WinCtrlShift    []string `toml:"win_ctrl_shift,omitempty" json:"win_ctrl_shift,omitempty"`
+	WinCtrlAlt      []string `toml:"win_ctrl_alt,omitempty" json:"win_ctrl_alt,omitempty"`
+	WinCtrlAltShift []string `toml:"win_ctrl_alt_shift,omitempty" json:"win_ctrl_alt_shift,omitempty"`
 }

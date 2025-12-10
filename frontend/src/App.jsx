@@ -47,6 +47,7 @@ function App() {
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [selectedLayerIdx, setSelectedLayerIdx] = useState(null);
     const [editingLayerIdx, setEditingLayerIdx] = useState(null);
+    const [draggingLayerIdx, setDraggingLayerIdx] = useState(null);
     const [status, setStatus] = useState("Loading...");
 
     // 1. LOAD
@@ -170,6 +171,40 @@ function App() {
         });
     };
 
+    const reorderLayers = (fromIdx, toIdx) => {
+        if (!selectedProfile || fromIdx === toIdx) return;
+        setConfig(prev => {
+            const profiles = { ...prev.profiles };
+            const profile = { ...profiles[selectedProfile] };
+            const layers = [...(profile.layers || [])];
+            const [moved] = layers.splice(fromIdx, 1);
+            layers.splice(toIdx, 0, moved);
+            profile.layers = layers;
+            profiles[selectedProfile] = profile;
+            return { ...prev, profiles };
+        });
+
+        const adjustIndex = (current) => {
+            if (current === null) return current;
+            if (current === fromIdx) return toIdx;
+            if (fromIdx < toIdx && current > fromIdx && current <= toIdx) return current - 1;
+            if (fromIdx > toIdx && current < fromIdx && current >= toIdx) return current + 1;
+            return current;
+        };
+
+        setSelectedLayerIdx(prev => adjustIndex(prev));
+        setEditingLayerIdx(prev => adjustIndex(prev));
+    };
+
+    const handleLayerDragStart = (idx) => setDraggingLayerIdx(idx);
+    const handleLayerDragOver = (e, idx) => {
+        e.preventDefault();
+        if (draggingLayerIdx === null || draggingLayerIdx === idx) return;
+        reorderLayers(draggingLayerIdx, idx);
+        setDraggingLayerIdx(idx);
+    };
+    const handleLayerDragEnd = () => setDraggingLayerIdx(null);
+
     const updateLayer = (layerIndex, nextLayer) => {
         if (!selectedProfile) return;
         setConfig(prev => {
@@ -292,11 +327,27 @@ function App() {
                                 {(config.profiles[selectedProfile].layers || []).map((layer, idx) => {
                                     const isEditing = editingLayerIdx === idx;
                                     return (
-                                        <div key={idx} onClick={() => setSelectedLayerIdx(idx)} style={{background: isEditing ? '#2a2a2a' : '#1a1a1a', padding: 15, marginBottom: 10, borderRadius: 5, border: isEditing ? '1px solid #ff0e82' : '1px solid #333', cursor:'pointer'}}>
+                                        <div 
+                                            key={idx}
+                                            draggable
+                                            onDragStart={() => handleLayerDragStart(idx)}
+                                            onDragOver={(e) => handleLayerDragOver(e, idx)}
+                                            onDragEnd={handleLayerDragEnd}
+                                            onClick={() => setSelectedLayerIdx(idx)}
+                                            style={{
+                                                background: isEditing ? '#2a2a2a' : '#1a1a1a',
+                                                padding: 15,
+                                                marginBottom: 10,
+                                                borderRadius: 5,
+                                                border: isEditing ? '1px solid #ff0e82' : '1px solid #333',
+                                                cursor:'pointer',
+                                                opacity: draggingLayerIdx === idx ? 0.6 : 1
+                                            }}
+                                        >
                                             
                                             {/* LAYER HEADER */}
                                             <div style={{display:'flex', gap: 10, marginBottom: 10, alignItems: 'center'}}>
-                                                <div style={{fontWeight:'bold', color: '#666', width: 20}}>{idx+1}.</div>
+                                                <div style={{fontWeight:'bold', color: '#666', width: 20, cursor:'grab'}} title="Drag to reorder">{idx+1}.</div>
                                                 
                                                 <div style={{flex:1}}>
                                                     <div style={{fontSize:12, color:'#888', marginBottom:4}}>Effect Type</div>

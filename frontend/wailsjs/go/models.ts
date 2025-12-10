@@ -19,10 +19,23 @@ export namespace main {
 	export class Shortcut {
 	    color?: string;
 	    ctrl?: string[];
-	    shift?: string[];
-	    alt?: string[];
-	    win?: string[];
+	    ctrl_alt?: string[];
+	    ctrl_alt_shift?: string[];
 	    ctrl_shift?: string[];
+	    ctrl_shift_alt?: string[];
+	    shift?: string[];
+	    shift_alt?: string[];
+	    alt?: string[];
+	    alt_shift?: string[];
+	    alt_ctrl?: string[];
+	    win?: string[];
+	    win_shift?: string[];
+	    win_shift_alt?: string[];
+	    win_alt?: string[];
+	    win_ctrl?: string[];
+	    win_ctrl_shift?: string[];
+	    win_ctrl_alt?: string[];
+	    win_ctrl_alt_shift?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Shortcut(source);
@@ -32,10 +45,23 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.color = source["color"];
 	        this.ctrl = source["ctrl"];
-	        this.shift = source["shift"];
-	        this.alt = source["alt"];
-	        this.win = source["win"];
+	        this.ctrl_alt = source["ctrl_alt"];
+	        this.ctrl_alt_shift = source["ctrl_alt_shift"];
 	        this.ctrl_shift = source["ctrl_shift"];
+	        this.ctrl_shift_alt = source["ctrl_shift_alt"];
+	        this.shift = source["shift"];
+	        this.shift_alt = source["shift_alt"];
+	        this.alt = source["alt"];
+	        this.alt_shift = source["alt_shift"];
+	        this.alt_ctrl = source["alt_ctrl"];
+	        this.win = source["win"];
+	        this.win_shift = source["win_shift"];
+	        this.win_shift_alt = source["win_shift_alt"];
+	        this.win_alt = source["win_alt"];
+	        this.win_ctrl = source["win_ctrl"];
+	        this.win_ctrl_shift = source["win_ctrl_shift"];
+	        this.win_ctrl_alt = source["win_ctrl_alt"];
+	        this.win_ctrl_alt_shift = source["win_ctrl_alt_shift"];
 	    }
 	}
 	export class Layer {
