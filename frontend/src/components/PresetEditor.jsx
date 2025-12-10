@@ -48,6 +48,32 @@ const ColorSwatch = ({ color, onChange }) => {
     );
 };
 
+const ColorField = ({
+    label,
+    value = '#ffffff',
+    onChange,
+    inputStyle: inputStyleOverride = {},
+    containerStyle = {},
+}) => {
+    const handleChange = (val) => {
+        if (onChange) onChange(val);
+    };
+    return (
+        <div style={containerStyle}>
+            {label && <span style={{...LABEL_STYLE, marginBottom: 5}}>{label}</span>}
+            <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                <ColorSwatch color={value} onChange={handleChange} />
+                <input
+                    type="text"
+                    value={value || ''}
+                    onChange={(e) => handleChange(e.target.value)}
+                    style={{...INPUT_STYLE, width: 120, margin: 0, ...inputStyleOverride}}
+                />
+            </div>
+        </div>
+    );
+};
+
 export default function PresetEditor({ preset, onChange }) {
     if (!preset) return <div style={{padding: 20, color: '#666'}}>Select a preset from the sidebar to edit.</div>;
 
@@ -83,8 +109,10 @@ export default function PresetEditor({ preset, onChange }) {
                 <div style={{ background: '#222', padding: 15, borderRadius: 8 }}>
                     <label style={LABEL_STYLE}>Base Color</label>
                     <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
-                        <ColorSwatch color={preset.color || '#ffffff'} onChange={c => handleChange('color', c)} />
-                        <input type="text" value={preset.color || '#ffffff'} onChange={e => handleChange('color', e.target.value)} style={{...INPUT_STYLE, width: 120, margin: 0}} />
+                        <ColorField
+                            value={preset.color || '#ffffff'}
+                            onChange={c => handleChange('color', c)}
+                        />
                     </div>
                 </div>
             )}
@@ -101,10 +129,12 @@ export default function PresetEditor({ preset, onChange }) {
                         </label>
                     </div>
                     <div style={{display:'flex', gap: 20, marginTop: 15}}>
-                        <div>
-                            <span style={{...LABEL_STYLE, marginBottom: 5}}>Tint</span>
-                            <ColorSwatch color={preset.tint || '#ffffff'} onChange={c => handleChange('tint', c)} />
-                        </div>
+                        <ColorField
+                            label="Tint"
+                            value={preset.tint || '#ffffff'}
+                            onChange={c => handleChange('tint', c)}
+                            containerStyle={{flex:1}}
+                        />
                         <label style={{...LABEL_STYLE, flex:1}}>Tint Mix ({preset.tint_mix ?? 0})
                             <input type="range" min="0" max="1" step="0.05" value={preset.tint_mix ?? 0} onChange={e => handleChange('tint_mix', parseFloat(e.target.value))} />
                         </label>
@@ -119,14 +149,15 @@ export default function PresetEditor({ preset, onChange }) {
                         <label style={LABEL_STYLE}>Color Palette (Ordered)</label>
                         <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
                             {(preset.colors || []).map((col, idx) => (
-                                <div key={idx} style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                                    <ColorSwatch 
-                                        color={col} 
+                                <div key={idx} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
+                                    <ColorField
+                                        value={col}
                                         onChange={(c) => {
                                             const newColors = [...preset.colors];
                                             newColors[idx] = c;
                                             handleChange('colors', newColors);
                                         }}
+                                        inputStyle={{width: 90, textAlign: 'center', padding: '4px 6px'}}
                                     />
                                     {/* Small X button to remove color */}
                                     <div 
@@ -189,14 +220,16 @@ export default function PresetEditor({ preset, onChange }) {
 
                     {preset.type === 'smoke' && (
                         <div style={{display: 'flex', gap: 30, marginTop: 15}}>
-                            <div>
-                                <span style={{...LABEL_STYLE, marginBottom: 5}}>Color Low</span>
-                                <ColorSwatch color={preset.color_low || '#222222'} onChange={c => handleChange('color_low', c)} />
-                            </div>
-                            <div>
-                                <span style={{...LABEL_STYLE, marginBottom: 5}}>Color High</span>
-                                <ColorSwatch color={preset.color_high || '#ffffff'} onChange={c => handleChange('color_high', c)} />
-                            </div>
+                            <ColorField
+                                label="Color Low"
+                                value={preset.color_low || '#222222'}
+                                onChange={c => handleChange('color_low', c)}
+                            />
+                            <ColorField
+                                label="Color High"
+                                value={preset.color_high || '#ffffff'}
+                                onChange={c => handleChange('color_high', c)}
+                            />
                         </div>
                     )}
                 </>
@@ -208,14 +241,18 @@ export default function PresetEditor({ preset, onChange }) {
                     <div style={{ background: '#222', padding: 15, borderRadius: 8, marginBottom: 15 }}>
                          <label style={LABEL_STYLE}>Colors</label>
                          <div style={{display: 'flex', gap: 20}}>
-                            <div>
-                                <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>BACKGROUND</span>
-                                <ColorSwatch color={preset.color_a || '#000000'} onChange={c => handleChange('color_a', c)} />
-                            </div>
-                            <div>
-                                <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>GROWTH</span>
-                                <ColorSwatch color={preset.color_b || '#ffffff'} onChange={c => handleChange('color_b', c)} />
-                            </div>
+                            <ColorField
+                                label="BACKGROUND"
+                                value={preset.color_a || '#000000'}
+                                onChange={c => handleChange('color_a', c)}
+                                containerStyle={{flex:1}}
+                            />
+                            <ColorField
+                                label="GROWTH"
+                                value={preset.color_b || '#ffffff'}
+                                onChange={c => handleChange('color_b', c)}
+                                containerStyle={{flex:1}}
+                            />
                          </div>
                     </div>
 
@@ -267,14 +304,16 @@ export default function PresetEditor({ preset, onChange }) {
     <>
         <div style={{ background: '#222', padding: 15, borderRadius: 8, marginBottom: 15 }}>
             <div style={{display: 'flex', gap: 20}}>
-                <div>
-                    <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>RIPPLE COLOR</span>
-                    <ColorSwatch color={preset.color || '#00FF00'} onChange={c => handleChange('color', c)} />
-                </div>
-                <div>
-                    <span style={{display: 'block', marginBottom: 5, fontSize: 10, color: '#888'}}>BACKGROUND</span>
-                    <ColorSwatch color={preset.base_color || '#000000'} onChange={c => handleChange('base_color', c)} />
-                </div>
+                <ColorField
+                    label="RIPPLE COLOR"
+                    value={preset.color || '#00FF00'}
+                    onChange={c => handleChange('color', c)}
+                />
+                <ColorField
+                    label="BACKGROUND"
+                    value={preset.base_color || '#000000'}
+                    onChange={c => handleChange('base_color', c)}
+                />
             </div>
         </div>
 
@@ -299,14 +338,16 @@ export default function PresetEditor({ preset, onChange }) {
              {preset.type === 'star_matrix' && (
                 <>
                      <div style={{display: 'flex', gap: 20, marginBottom: 15}}>
-                        <div>
-                            <span style={LABEL_STYLE}>Star Color</span>
-                            <ColorSwatch color={preset.star || '#ffffff'} onChange={c => handleChange('star', c)} />
-                        </div>
-                        <div>
-                            <span style={LABEL_STYLE}>Background</span>
-                            <ColorSwatch color={preset.background || '#000000'} onChange={c => handleChange('background', c)} />
-                        </div>
+                        <ColorField
+                            label="Star Color"
+                            value={preset.star || '#ffffff'}
+                            onChange={c => handleChange('star', c)}
+                        />
+                        <ColorField
+                            label="Background"
+                            value={preset.background || '#000000'}
+                            onChange={c => handleChange('background', c)}
+                        />
                      </div>
                     <label style={LABEL_STYLE}>Density ({preset.density})
                         <input type="range" min="0" max="1" step="0.05" value={preset.density || 0.2} onChange={e => handleChange('density', parseFloat(e.target.value))} style={{width: '100%'}}/>
@@ -344,10 +385,11 @@ export default function PresetEditor({ preset, onChange }) {
                             <input type="number" step="0.1" value={preset.reactive_phase_shift || 0} onChange={e => handleChange('reactive_phase_shift', parseFloat(e.target.value))} style={INPUT_STYLE}/>
                         </label>
 
-                        <div>
-                            <span style={{display:'block', marginBottom: 5, fontSize: 10, color:'#888'}}>Reactive Color</span>
-                            <ColorSwatch color={preset.reactive_color || preset.color || '#00ff88'} onChange={c => handleChange('reactive_color', c)} />
-                        </div>
+                        <ColorField
+                            label="Reactive Color"
+                            value={preset.reactive_color || preset.color || '#00ff88'}
+                            onChange={c => handleChange('reactive_color', c)}
+                        />
 
                         <label style={LABEL_STYLE}>History
                             <input type="range" min="0" max="5" step="0.1" value={preset.reactive_history || 0} onChange={e => handleChange('reactive_history', parseFloat(e.target.value))} style={{width:'100%'}}/>
