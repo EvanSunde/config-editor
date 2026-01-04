@@ -298,7 +298,7 @@ function App() {
     if (!config) return <div style={{padding: 50, color: 'white'}}>{status}</div>;
 
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#050505', color: '#e0e0e0', fontFamily: 'sans-serif' }}>
+        <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', background: '#050505', color: '#e0e0e0', fontFamily: 'sans-serif' }}>
             
             {/* HEADER */}
             <div style={{ display: 'flex', borderBottom: '1px solid #333', alignItems: 'center', padding: '0 10px', height: '50px' }}>
