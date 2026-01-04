@@ -76,6 +76,21 @@ type ReactionDiffusionEffect struct {
 	InjectionHistory float64
 }
 
+type SpaceColonizationEffect struct {
+	InteractionMode string
+	Attractors      int
+	InfluenceDist   float64
+	SegmentLen      float64
+	KillDist        float64
+	GrowthInterval  float64
+	Lifespan        float64
+	FadeTime        float64
+	Thickness       float64
+	ThicknessDecay  float64
+	ColorRoot       string
+	ColorTip        string
+}
+
 // Private container so Wails codegen ignores it
 // (unexported and not referenced in root structs)
 type typedConfig struct {
@@ -87,6 +102,7 @@ type typedConfig struct {
 	DoomFire          *DoomFireEffect
 	ReactiveRipple    *ReactiveRippleEffect
 	ReactionDiffusion *ReactionDiffusionEffect
+	SpaceColonization *SpaceColonizationEffect
 }
 
 // InflateFromFlat builds a typedConfig from the current flat fields
@@ -114,6 +130,21 @@ func (l *Layer) InflateFromFlat() *typedConfig {
 			Du:     l.Du, Dv: l.Dv, Feed: l.Feed, Kill: l.Kill,
 			Width: l.Width, Height: l.Height, Steps: l.Steps, Zoom: l.Zoom, Speed: l.Speed,
 			InjectionAmount: l.InjectionAmount, InjectionRadius: l.InjectionRadius, InjectionDecay: l.InjectionDecay, InjectionHistory: l.InjectionHistory,
+		}
+	case "space_colonization":
+		t.SpaceColonization = &SpaceColonizationEffect{
+			InteractionMode: l.InteractionMode,
+			Attractors:      l.Attractors,
+			InfluenceDist:   l.InfluenceDist,
+			SegmentLen:      l.SegmentLen,
+			KillDist:        l.KillDist,
+			GrowthInterval:  l.GrowthInterval,
+			Lifespan:        l.Lifespan,
+			FadeTime:        l.FadeTime,
+			Thickness:       l.Thickness,
+			ThicknessDecay:  l.ThicknessDecay,
+			ColorRoot:       l.ColorRoot,
+			ColorTip:        l.ColorTip,
 		}
 	}
 	return t
@@ -176,6 +207,18 @@ func (l *Layer) clearFlatEffectFields() {
 	l.InjectionRadius = 0
 	l.InjectionDecay = 0
 	l.InjectionHistory = 0
+	// Space colonization
+	l.InteractionMode = ""
+	l.Attractors = 0
+	l.InfluenceDist = 0
+	l.SegmentLen = 0
+	l.KillDist = 0
+	l.GrowthInterval = 0
+	l.Lifespan = 0
+	l.FadeTime = 0
+	l.ThicknessDecay = 0
+	l.ColorRoot = ""
+	l.ColorTip = ""
 }
 
 // FlattenToFlat copies a typedConfig back into the flat fields for serialization
@@ -258,6 +301,21 @@ func (l *Layer) FlattenToFlat(t *typedConfig) {
 			l.InjectionRadius = t.ReactionDiffusion.InjectionRadius
 			l.InjectionDecay = t.ReactionDiffusion.InjectionDecay
 			l.InjectionHistory = t.ReactionDiffusion.InjectionHistory
+		}
+	case "space_colonization":
+		if t.SpaceColonization != nil {
+			l.InteractionMode = t.SpaceColonization.InteractionMode
+			l.Attractors = t.SpaceColonization.Attractors
+			l.InfluenceDist = t.SpaceColonization.InfluenceDist
+			l.SegmentLen = t.SpaceColonization.SegmentLen
+			l.KillDist = t.SpaceColonization.KillDist
+			l.GrowthInterval = t.SpaceColonization.GrowthInterval
+			l.Lifespan = t.SpaceColonization.Lifespan
+			l.FadeTime = t.SpaceColonization.FadeTime
+			l.Thickness = t.SpaceColonization.Thickness
+			l.ThicknessDecay = t.SpaceColonization.ThicknessDecay
+			l.ColorRoot = t.SpaceColonization.ColorRoot
+			l.ColorTip = t.SpaceColonization.ColorTip
 		}
 	}
 }

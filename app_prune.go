@@ -123,6 +123,19 @@ func makeLayerTomlMap(l Layer) map[string]interface{} {
 		addF("injection_radius", l.InjectionRadius)
 		addF("injection_decay", l.InjectionDecay)
 		addF("injection_history", l.InjectionHistory)
+	case "space_colonization":
+		addStr("interaction_mode", l.InteractionMode)
+		addI("attractors", l.Attractors)
+		addF("influence_dist", l.InfluenceDist)
+		addF("segment_len", l.SegmentLen)
+		addF("kill_dist", l.KillDist)
+		addF("growth_interval", l.GrowthInterval)
+		addF("lifespan", l.Lifespan)
+		addF("fade_time", l.FadeTime)
+		addF("thickness", l.Thickness)
+		addF("thickness_decay", l.ThicknessDecay)
+		addStr("color_root", l.ColorRoot)
+		addStr("color_tip", l.ColorTip)
 	}
 
 	// Reactive block: include only if meaningful

@@ -36,7 +36,8 @@ const EFFECT_FIELDS = {
   star_matrix: ['star','background','density','speed'],
   doom_fire: ['speed','cooling','spark_chance','spark_intensity'],
   reactive_ripple: ['color','base_color','wave_speed','decay_time','thickness','intensity'],
-  reaction_diffusion: ['color_a','color_b','du','dv','feed','kill','width','height','steps','zoom','speed','injection_amount','injection_radius','injection_decay','injection_history']
+  reaction_diffusion: ['color_a','color_b','du','dv','feed','kill','width','height','steps','zoom','speed','injection_amount','injection_radius','injection_decay','injection_history'],
+  space_colonization: ['interaction_mode','attractors','influence_dist','segment_len','kill_dist','growth_interval','lifespan','fade_time','thickness','thickness_decay','color_root','color_tip']
 };
 const EFFECT_DEFAULTS = {
   static_color: { color: '#ffffff' },
@@ -46,7 +47,21 @@ const EFFECT_DEFAULTS = {
   star_matrix: { star: '#ffffff', background: '#000000', density: 0.2, speed: 0.5 },
   doom_fire: { speed: 1.0, cooling: 0.05, spark_chance: 0.5, spark_intensity: 1.0 },
   reactive_ripple: { color: '#00FF00', base_color: '#000000', wave_speed: 2.5, decay_time: 1.5, thickness: 0.2, intensity: 1.0 },
-  reaction_diffusion: { color_a: '#000000', color_b: '#ffffff', du: 0.16, dv: 0.08, feed: 0.055, kill: 0.062, width: 64, height: 32, steps: 8, zoom: 1.0, speed: 1.0, injection_amount: 0, injection_radius: 0, injection_decay: 0, injection_history: 0 }
+  reaction_diffusion: { color_a: '#000000', color_b: '#ffffff', du: 0.16, dv: 0.08, feed: 0.055, kill: 0.062, width: 64, height: 32, steps: 8, zoom: 1.0, speed: 1.0, injection_amount: 0, injection_radius: 0, injection_decay: 0, injection_history: 0 },
+  space_colonization: {
+    interaction_mode: 'food',
+    attractors: 1000,
+    influence_dist: 0.6,
+    segment_len: 0.03,
+    kill_dist: 0.035,
+    growth_interval: 0.02,
+    lifespan: 10.0,
+    fade_time: 4.0,
+    thickness: 0.03,
+    thickness_decay: 0.99,
+    color_root: '#00ffeeff',
+    color_tip: '#00ff48df'
+  }
 };
 const sanitizeLayerForType = (layer, newType) => {
   const keep = new Set(['type','zones','keys', ...(EFFECT_FIELDS[newType] || []), ...REACTIVE_FIELDS]);
@@ -396,12 +411,14 @@ function App() {
                                                         <option value="rainbow_wave">Rainbow Wave</option>
                                                         <option value="doom_fire">Doom Fire</option>
                                                         <option value="reactive_ripple">Reactive Ripple</option>
+                                                        <option value="space_colonization">Space Colonization</option>
                                                     </select>
                                                 </div>
 
                                                 {/* EDIT TOGGLE BUTTON */}
                                                 <button 
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setEditingLayerIdx(isEditing ? null : idx);
                                                         setSelectedLayerIdx(idx);
                                                     }}

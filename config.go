@@ -94,6 +94,19 @@ type Effect struct {
 	InjectionRadius  float64 `toml:"injection_radius,omitempty" json:"injection_radius,omitempty"`
 	InjectionDecay   float64 `toml:"injection_decay,omitempty" json:"injection_decay,omitempty"`
 	InjectionHistory float64 `toml:"injection_history,omitempty" json:"injection_history,omitempty"`
+
+	//space colonization
+	InteractionMode string  `toml:"interaction_mode,omitempty" json:"interaction_mode,omitempty"`
+	Attractors      int     `toml:"attractors,omitempty" json:"attractors,omitempty"`
+	InfluenceDist   float64 `toml:"influence_dist,omitempty" json:"influence_dist,omitempty"`
+	SegmentLen      float64 `toml:"segment_len,omitempty" json:"segment_len,omitempty"`
+	KillDist        float64 `toml:"kill_dist,omitempty" json:"kill_dist,omitempty"`
+	GrowthInterval  float64 `toml:"growth_interval,omitempty" json:"growth_interval,omitempty"`
+	Lifespan        float64 `toml:"lifespan,omitempty" json:"lifespan,omitempty"`
+	FadeTime        float64 `toml:"fade_time,omitempty" json:"fade_time,omitempty"`
+	ThicknessDecay  float64 `toml:"thickness_decay,omitempty" json:"thickness_decay,omitempty"`
+	ColorRoot       string  `toml:"color_root,omitempty" json:"color_root,omitempty"`
+	ColorTip        string  `toml:"color_tip,omitempty" json:"color_tip,omitempty"`
 }
 
 type Profile struct {

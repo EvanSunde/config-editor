@@ -118,6 +118,17 @@ export namespace main {
 	    injection_radius?: number;
 	    injection_decay?: number;
 	    injection_history?: number;
+	    interaction_mode?: string;
+	    attractors?: number;
+	    influence_dist?: number;
+	    segment_len?: number;
+	    kill_dist?: number;
+	    growth_interval?: number;
+	    lifespan?: number;
+	    fade_time?: number;
+	    thickness_decay?: number;
+	    color_root?: string;
+	    color_tip?: string;
 	    zones?: string[];
 	    keys?: string[];
 	
@@ -180,6 +191,17 @@ export namespace main {
 	        this.injection_radius = source["injection_radius"];
 	        this.injection_decay = source["injection_decay"];
 	        this.injection_history = source["injection_history"];
+	        this.interaction_mode = source["interaction_mode"];
+	        this.attractors = source["attractors"];
+	        this.influence_dist = source["influence_dist"];
+	        this.segment_len = source["segment_len"];
+	        this.kill_dist = source["kill_dist"];
+	        this.growth_interval = source["growth_interval"];
+	        this.lifespan = source["lifespan"];
+	        this.fade_time = source["fade_time"];
+	        this.thickness_decay = source["thickness_decay"];
+	        this.color_root = source["color_root"];
+	        this.color_tip = source["color_tip"];
 	        this.zones = source["zones"];
 	        this.keys = source["keys"];
 	    }
@@ -268,6 +290,17 @@ export namespace main {
 	    injection_radius?: number;
 	    injection_decay?: number;
 	    injection_history?: number;
+	    interaction_mode?: string;
+	    attractors?: number;
+	    influence_dist?: number;
+	    segment_len?: number;
+	    kill_dist?: number;
+	    growth_interval?: number;
+	    lifespan?: number;
+	    fade_time?: number;
+	    thickness_decay?: number;
+	    color_root?: string;
+	    color_tip?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Effect(source);
@@ -328,6 +361,17 @@ export namespace main {
 	        this.injection_radius = source["injection_radius"];
 	        this.injection_decay = source["injection_decay"];
 	        this.injection_history = source["injection_history"];
+	        this.interaction_mode = source["interaction_mode"];
+	        this.attractors = source["attractors"];
+	        this.influence_dist = source["influence_dist"];
+	        this.segment_len = source["segment_len"];
+	        this.kill_dist = source["kill_dist"];
+	        this.growth_interval = source["growth_interval"];
+	        this.lifespan = source["lifespan"];
+	        this.fade_time = source["fade_time"];
+	        this.thickness_decay = source["thickness_decay"];
+	        this.color_root = source["color_root"];
+	        this.color_tip = source["color_tip"];
 	    }
 	}
 	export class HyprSettings {

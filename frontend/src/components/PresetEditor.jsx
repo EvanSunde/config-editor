@@ -101,6 +101,7 @@ export default function PresetEditor({ preset, onChange }) {
                     <option value="rainbow_wave" style={OPTION_STYLE}>Rainbow Wave</option>
                     <option value="doom_fire" style={OPTION_STYLE}>Doom Fire</option>
                     <option value="reactive_ripple" style={OPTION_STYLE}>Reactive Ripple</option>
+                    <option value="space_colonization" style={OPTION_STYLE}>Space Colonization</option>
                 </select>
             </label>
 
@@ -370,7 +371,7 @@ export default function PresetEditor({ preset, onChange }) {
                     <span style={{fontWeight: 'bold', color: '#ff0e82'}}>ENABLE REACTIVE (Typing Effects)</span>
                 </label>
 
-                {preset.reactive && (
+                {preset.reactive && preset.type === 'reactive_ripple' && (
                     <div style={{paddingLeft: 30, marginTop: 12, display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap: 16}}>
                         <label style={LABEL_STYLE}>Displacement / Splash Size
                             <input type="range" min="0" max="5" step="0.1" value={preset.reactive_displacement || 1.0} onChange={e => handleChange('reactive_displacement', parseFloat(e.target.value))} style={{width: '100%'}}/>
@@ -406,6 +407,137 @@ export default function PresetEditor({ preset, onChange }) {
                         </label>
                     </div>
                 )}
+
+        
+            {/* --- SPACE COLONIZATION --- */}
+            {preset.type === 'space_colonization' && (
+                <div style={{ background: '#222', padding: 15, borderRadius: 8 }}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 15}}>
+                        <label style={LABEL_STYLE}>Interaction Mode
+                            <input
+                                type="text"
+                                value={preset.interaction_mode || 'food'}
+                                onChange={e => handleChange('interaction_mode', e.target.value)}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Key Reactive
+                            <input type="checkbox" checked={preset.reactive || false} onChange={e => handleChange('key_reactive', e.target.checked)} style={{marginLeft: 10}}/>
+                        </label>
+                        <label style={LABEL_STYLE}>Attractors ({preset.attractors ?? 1000})
+                            <input
+                                type="number"
+                                min="100"
+                                max="5000"
+                                step="50"
+                                value={preset.attractors ?? 1000}
+                                onChange={e => handleChange('attractors', parseInt(e.target.value, 10))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Influence Distance ({preset.influence_dist ?? 0.6})
+                            <input
+                                type="number"
+                                min="0.1"
+                                max="1.0"
+                                step="0.01"
+                                value={preset.influence_dist ?? 0.6}
+                                onChange={e => handleChange('influence_dist', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Segment Length ({preset.segment_len ?? 0.03})
+                            <input
+                                type="number"
+                                min="0.005"
+                                max="0.1"
+                                step="0.005"
+                                value={preset.segment_len ?? 0.03}
+                                onChange={e => handleChange('segment_len', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Kill Distance ({preset.kill_dist ?? 0.035})
+                            <input
+                                type="number"
+                                min="0.005"
+                                max="0.1"
+                                step="0.005"
+                                value={preset.kill_dist ?? 0.035}
+                                onChange={e => handleChange('kill_dist', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Growth Interval ({preset.growth_interval ?? 0.02}s)
+                            <input
+                                type="number"
+                                min="0.005"
+                                max="0.2"
+                                step="0.005"
+                                value={preset.growth_interval ?? 0.02}
+                                onChange={e => handleChange('growth_interval', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Lifespan ({preset.lifespan ?? 10})
+                            <input
+                                type="number"
+                                min="1"
+                                max="30"
+                                step="0.5"
+                                value={preset.lifespan ?? 10}
+                                onChange={e => handleChange('lifespan', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Fade Time ({preset.fade_time ?? 4})
+                            <input
+                                type="number"
+                                min="0.5"
+                                max="10"
+                                step="0.5"
+                                value={preset.fade_time ?? 4}
+                                onChange={e => handleChange('fade_time', parseFloat(e.target.value))}
+                                style={INPUT_STYLE}
+                            />
+                        </label>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 15, marginTop: 20}}>
+                        <label style={LABEL_STYLE}>Thickness ({preset.thickness ?? 0.03})
+                            <input
+                                type="range"
+                                min="0.005"
+                                max="0.08"
+                                step="0.002"
+                                value={preset.thickness ?? 0.03}
+                                onChange={e => handleChange('thickness', parseFloat(e.target.value))}
+                            />
+                        </label>
+                        <label style={LABEL_STYLE}>Thickness Decay ({preset.thickness_decay ?? 0.99})
+                            <input
+                                type="range"
+                                min="0.8"
+                                max="1"
+                                step="0.005"
+                                value={preset.thickness_decay ?? 0.99}
+                                onChange={e => handleChange('thickness_decay', parseFloat(e.target.value))}
+                            />
+                        </label>
+                    </div>
+                    <div style={{display: 'flex', gap: 30, marginTop: 20}}>
+                        <ColorField
+                            label="Root Color"
+                            value={preset.color_root || '#00ffeeff'}
+                            onChange={c => handleChange('color_root', c)}
+                        />
+                        <ColorField
+                            label="Tip Color"
+                            value={preset.color_tip || '#00ff48df'}
+                            onChange={c => handleChange('color_tip', c)}
+                        />
+                    </div>
+                </div>
+            )}
             </div>
         </div>
     );
