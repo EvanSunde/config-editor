@@ -144,7 +144,7 @@ export default function PresetEditor({ preset, onChange }) {
             )}
 
             {/* --- FLUIDS (LIQUID / SMOKE) --- */}
-            {['liquid_plasma', 'smoke', 'bio_ocean'].includes(preset.type) && (
+            {['liquid_plasma', 'bio_ocean'].includes(preset.type) && (
                 <>
                     <div style={{ background: '#222', padding: 15, borderRadius: 8, marginBottom: 15 }}>
                         <label style={LABEL_STYLE}>Color Palette (Ordered)</label>
@@ -191,7 +191,16 @@ export default function PresetEditor({ preset, onChange }) {
                                     <input type="number" min="1" max="10" value={preset.wave_complexity || 1} onChange={e => handleChange('wave_complexity', parseInt(e.target.value, 10))} style={INPUT_STYLE}/>
                                 </label>
                                 <label style={LABEL_STYLE}>Mix Mode
-                                    <input type="text" value={preset.mix_mode || 'linear'} onChange={e => handleChange('mix_mode', e.target.value)} style={INPUT_STYLE}/>
+                                    <select style={SELECT_STYLE} value={preset.mix_mode || 'linear'} onChange={e => handleChange('mix_mode', e.target.value)}>
+                                        <option value="linear">Linear</option>
+                                        <option value="nearest">Nearest</option>
+                                    </select>
+                                </label>
+                                <label style={LABEL_STYLE}>Saturation ({preset.saturation ?? 1.0})
+                                    <input type="range" min="0" max="2" step="0.1" value={preset.saturation ?? 1.0} onChange={e => handleChange('saturation', parseFloat(e.target.value))} style={{width: '100%'}}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Value ({preset.value ?? 1.0})
+                                    <input type="range" min="0" max="2" step="0.1" value={preset.value ?? 1.0} onChange={e => handleChange('value', parseFloat(e.target.value))} style={{width: '100%'}}/>
                                 </label>
                             </>
                         )}
@@ -328,6 +337,9 @@ export default function PresetEditor({ preset, onChange }) {
             <label style={LABEL_STYLE}>Thickness ({preset.thickness})
                 <input type="range" min="0.1" max="5.0" step="0.1" value={preset.thickness || 0.2} onChange={e => handleChange('thickness', parseFloat(e.target.value))} style={{width: '100%'}}/>
             </label>
+            <label style={LABEL_STYLE}>History ({preset.history})
+                <input type="range" min="0.1" max="5.0" step="0.1" value={preset.history || 0.1} onChange={e => handleChange('history', parseFloat(e.target.value))} style={{width: '100%'}}/>
+            </label>
              <label style={LABEL_STYLE}>Intensity
                 <input type="number" step="0.1" value={preset.intensity || 1.0} onChange={e => handleChange('intensity', parseFloat(e.target.value))} style={INPUT_STYLE}/>
             </label>
@@ -360,53 +372,75 @@ export default function PresetEditor({ preset, onChange }) {
              )}
 
             {/* --- REACTIVE SETTINGS (Toggle) --- */}
-            <div style={{marginTop: 30, paddingTop: 20, borderTop: '1px solid #333'}}>
-                <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
-                    <input 
-                        type="checkbox" 
-                        checked={preset.reactive || false} 
-                        onChange={e => handleChange('reactive', e.target.checked)}
-                        style={{width: 20, height: 20, marginRight: 10}}
-                    />
-                    <span style={{fontWeight: 'bold', color: '#ff0e82'}}>ENABLE REACTIVE (Typing Effects)</span>
-                </label>
-
-                {preset.reactive && preset.type === 'reactive_ripple' && (
-                    <div style={{paddingLeft: 30, marginTop: 12, display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap: 16}}>
-                        <label style={LABEL_STYLE}>Displacement / Splash Size
-                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_displacement || 1.0} onChange={e => handleChange('reactive_displacement', parseFloat(e.target.value))} style={{width: '100%'}}/>
-                        </label>
-                        <label style={LABEL_STYLE}>Push Enabled
-                            <input type="checkbox" checked={preset.reactive_push || false} onChange={e => handleChange('reactive_push', e.target.checked)} style={{marginLeft: 10}}/>
-                        </label>
-                        <label style={LABEL_STYLE}>Push Duration (s)
-                            <input type="number" min="0" step="0.05" value={preset.reactive_push_duration || 0.3} onChange={e => handleChange('reactive_push_duration', parseFloat(e.target.value))} style={INPUT_STYLE}/>
-                        </label>
-                        <label style={LABEL_STYLE}>Phase Shift
-                            <input type="number" step="0.1" value={preset.reactive_phase_shift || 0} onChange={e => handleChange('reactive_phase_shift', parseFloat(e.target.value))} style={INPUT_STYLE}/>
-                        </label>
-
-                        <ColorField
-                            label="Reactive Color"
-                            value={preset.reactive_color || preset.color || '#00ff88'}
-                            onChange={c => handleChange('reactive_color', c)}
+            {['liquid_plasma', 'smoke'].includes(preset.type) && (
+                <div style={{marginTop: 30, paddingTop: 20, borderTop: '1px solid #333'}}>
+                    <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
+                        <input 
+                            type="checkbox" 
+                            checked={preset.reactive || false} 
+                            onChange={e => handleChange('reactive', e.target.checked)}
+                            style={{width: 20, height: 20, marginRight: 10}}
                         />
+                        <span style={{fontWeight: 'bold', color: '#ff0e82'}}>ENABLE REACTIVE (Typing Effects)</span>
+                    </label>
 
-                        <label style={LABEL_STYLE}>History
-                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_history || 0} onChange={e => handleChange('reactive_history', parseFloat(e.target.value))} style={{width:'100%'}}/>
-                        </label>
+                    {preset.reactive && (
+                        <div style={{paddingLeft: 30, marginTop: 12}}>
+                             <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap: 16}}>
+                                <label style={LABEL_STYLE}>History ({preset.reactive_history})
+                                    <input type="range" min="0.05" max="2.0" step="0.05" value={preset.reactive_history || 0.05} onChange={e => handleChange('reactive_history', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Decay ({preset.reactive_decay})
+                                    <input type="range" min="0.01" max="1.0" step="0.01" value={preset.reactive_decay || 0.01} onChange={e => handleChange('reactive_decay', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Spread ({preset.reactive_spread})
+                                    <input type="range" min="0.005" max="0.5" step="0.005" value={preset.reactive_spread || 0.005} onChange={e => handleChange('reactive_spread', parseFloat(e.target.value))} style={{width:'100%'}}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Intensity
+                                    <input type="number" step="0.1" value={preset.reactive_intensity || 0} onChange={e => handleChange('reactive_intensity', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Displacement
+                                    <input type="number" step="0.1" value={preset.reactive_displacement || 0} onChange={e => handleChange('reactive_displacement', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                                <label style={LABEL_STYLE}>Push Duration
+                                    <input type="number" step="0.05" value={preset.reactive_push_duration || 0} onChange={e => handleChange('reactive_push_duration', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                </label>
+                            </div>
 
-                        <label style={LABEL_STYLE}>Decay
-                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_decay || 0} onChange={e => handleChange('reactive_decay', parseFloat(e.target.value))} style={{width:'100%'}}/>
-                        </label>
-                        <label style={LABEL_STYLE}>Spread
-                            <input type="range" min="0" max="5" step="0.1" value={preset.reactive_spread || 0} onChange={e => handleChange('reactive_spread', parseFloat(e.target.value))} style={{width:'100%'}}/>
-                        </label>
-                        <label style={LABEL_STYLE}>Intensity
-                            <input type="range" min="0" max="3" step="0.05" value={preset.reactive_intensity || 1} onChange={e => handleChange('reactive_intensity', parseFloat(e.target.value))} style={{width:'100%'}}/>
-                        </label>
-                    </div>
-                )}
+                            <div style={{marginTop: 15, display: 'flex', flexWrap: 'wrap', gap: 20}}>
+                                <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#ccc', fontSize: '12px', textTransform: 'uppercase'}}>
+                                    <input type="checkbox" checked={preset.reactive_push || false} onChange={e => handleChange('reactive_push', e.target.checked)} style={{marginRight: 8}}/>
+                                    Enable Push
+                                </label>
+                                
+                                {preset.type === 'liquid_plasma' && (
+                                    <>
+                                        <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#ccc', fontSize: '12px', textTransform: 'uppercase'}}>
+                                            <input type="checkbox" checked={preset.reactive_ripple || false} onChange={e => handleChange('reactive_ripple', e.target.checked)} style={{marginRight: 8}}/>
+                                            Enable Ripple
+                                        </label>
+                                        <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#ccc', fontSize: '12px', textTransform: 'uppercase'}}>
+                                            <input type="checkbox" checked={preset.reactive_splash || false} onChange={e => handleChange('reactive_splash', e.target.checked)} style={{marginRight: 8}}/>
+                                            Enable Splash
+                                        </label>
+                                    </>
+                                )}
+                            </div>
+
+                            {preset.type === 'liquid_plasma' && (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0,1fr))', gap: 16, marginTop: 15}}>
+                                    <label style={LABEL_STYLE}>Phase Shift
+                                        <input type="number" step="0.1" value={preset.reactive_phase_shift || 0} onChange={e => handleChange('reactive_phase_shift', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                    </label>
+                                    <label style={LABEL_STYLE}>Turbulence
+                                        <input type="number" step="0.1" value={preset.reactive_turbulence || 0} onChange={e => handleChange('reactive_turbulence', parseFloat(e.target.value))} style={INPUT_STYLE}/>
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
         
             {/* --- SPACE COLONIZATION --- */}
@@ -538,7 +572,6 @@ export default function PresetEditor({ preset, onChange }) {
                     </div>
                 </div>
             )}
-            </div>
         </div>
     );
 }
